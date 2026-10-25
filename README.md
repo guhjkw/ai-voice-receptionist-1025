@@ -2,7 +2,7 @@
 
 An AI phone receptionist for an invented Phoenix heating, cooling and plumbing company, **Copper Mesa Air & Plumbing**. You can talk to it (microphone) or type to it. Every reply is computed live from what you say, so this is not a recording. It triages emergencies, books real times from the technician calendar, hands calls to a person when it should, and writes the call record.
 
-**Live:** not deployed yet (deploy needs Taiwo's yes).
+**Live:** https://guhjkw.github.io/ai-voice-receptionist-1025/
 
 ## What it does
 | Piece | What the visitor sees | How it works (`src/receptionEngine.js`) |
