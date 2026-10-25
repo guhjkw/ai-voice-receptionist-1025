@@ -453,7 +453,7 @@ footer b{color:var(--text)}
   <div>
     <div class="sec-h" style="margin-bottom:14px"><div><span class="kick">Under the hood</span><h2>One engine. Tested.</h2></div></div>
     <p>The page and the tests load the <b>same</b> engine file, so what you just used is exactly what was tested. Hand <span class="mono">src/</span> and <span class="mono">tests/</span> to your developer, or never open them.</p>
-    <div class="checks"><span id="chkEngine">78 engine checks pass</span><span id="chkBrowser">43 browser checks pass</span><span id="dataCheck">Data check: 0 rows skipped</span></div>
+    <div class="checks"><span id="chkEngine">78 engine checks pass</span><span id="chkBrowser">44 browser checks pass</span><span id="dataCheck">Data check: 0 rows skipped</span></div>
   </div>
   <div class="tree"><b>index.html</b>              this page
 <b>src/receptionEngine.js</b>  understanding, triage, calendar,
@@ -584,6 +584,18 @@ footer b{color:var(--text)}
   }
 
   // ------------------------------------------------------------ call
+  // The call-time menu always shows the time of the call in progress (sample calls bring their own time).
+  function showTime(iso) {
+    var sel = $('#callTime');
+    $$('#callTime option[data-tmp]').forEach(function (o) { if (o.value !== iso) o.remove(); });
+    if (!$$('#callTime option').some(function (o) { return o.value === iso; })) {
+      var w = E.parseNow(iso), o = document.createElement('option');
+      o.value = iso; o.setAttribute('data-tmp', '1');
+      o.textContent = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][w.weekday] + ' ' + E.clock(w.minutes);
+      sel.appendChild(o);
+    }
+    sel.value = iso;
+  }
   function presetLabel(id) { var p = PRESETS.filter(function (x) { return x.id === id; })[0]; return p ? p.label : id; }
   function openNoteFor(iso) {
     var w = E.parseNow(iso); var open = E.isOpen(DATA, w);
@@ -601,6 +613,7 @@ footer b{color:var(--text)}
     $('#transcript').innerHTML = '';
     $('#summary').classList.remove('show'); $('#summary').innerHTML = '';
     $('#openNote').textContent = openNoteFor(now);
+    showTime(now);
     setStatus('live', 'Live');
     S.t0 = performance.now(); clearInterval(S.timer); S.timer = setInterval(tick, 500); tick();
     $('#input').disabled = false; $('#sendBtn').disabled = false; $('#micBtn').disabled = !REC;
@@ -804,7 +817,7 @@ footer b{color:var(--text)}
         var z = DATA.zones.filter(function (x) { return x.id === b.zone; })[0], tr = z ? z.travel : 30;
         var s = hm(b.start), e = hm(b.end);
         inner += '<span class="drive" style="left:' + pct(s - tr) + '%;width:' + (pct(s) - pct(s - tr)) + '%" title="Drive time"></span>';
-        inner += '<span class="blk' + (b.booked ? ' booked' : '') + '" style="left:' + pct(s) + '%;width:' + (pct(e) - pct(s)) + '%">' + esc(b.booked ? 'Booked · ' + b.label : b.label) + '<small>' + E.clock(s) + ' · ' + esc(z ? z.name : '') + '</small></span>';
+        inner += '<span class="blk' + (b.booked ? ' booked' : '') + '" style="left:' + pct(s) + '%;width:' + (pct(e) - pct(s)) + '%">' + esc(b.booked ? 'Booked · ' + (b.who || b.label) : b.label) + '<small>' + E.clock(s) + ' · ' + esc(z ? z.name : '') + '</small></span>';
       });
       offers.filter(function (o) { return o.tech === t.id; }).forEach(function (o) {
         inner += '<span class="offer" style="left:' + pct(o.start) + '%;width:' + (pct(o.end) - pct(o.start)) + '%">Offered ' + esc(o.spanLabel) + '</span>';
@@ -895,7 +908,7 @@ footer b{color:var(--text)}
   function init() {
     $('#wave').innerHTML = new Array(28).join('<i></i>') + '<i></i>';
     $('#callTime').innerHTML = PRESETS.map(function (p) { return '<option value="' + p.id + '">' + p.label + '</option>'; }).join('');
-    $('#callTime').onchange = function () { S.preset = this.value; $('#openNote').textContent = openNoteFor(S.preset); if (!S.call || S.call.ended) { S.calDay = 0; renderCal(); } toast('The next call starts at ' + presetLabel(S.preset) + '.'); };
+    $('#callTime').onchange = function () { S.preset = this.value; $$('#callTime option[data-tmp]').forEach(function (o) { o.remove(); }); this.value = S.preset; $('#openNote').textContent = openNoteFor(S.preset); if (!S.call || S.call.ended) { S.calDay = 0; renderCal(); } toast('The next call starts at ' + presetLabel(S.preset) + '.'); };
     $('#openNote').textContent = openNoteFor(S.preset);
     $$('[data-start]').forEach(function (b) { b.onclick = startFree; });
     $('#sendBtn').onclick = submit;

@@ -118,6 +118,7 @@ with sync_playwright() as pw:
     txt = pg.locator("#transcript").text_content()
     check("price sample: never guesses a system price", "I can't give a price for a new system" in txt)
     check("price sample: books the real tomorrow-morning opening", "Tomorrow morning I have one time" in txt and pg.locator("#sumHead").text_content().startswith("Booked: New system estimate"))
+    check("price sample: the call-time menu shows the sample's own time (Tue 10:20 AM)", pg.locator('#callTime option:checked').text_content().strip() == 'Tue 10:20 AM')
     check("price sample: 'No texts, please' means no text is prepared", "the caller said no" in pg.locator("#smsOut").text_content())
     pg.click('#samples [data-sample="pipe"]')
     pg.wait_for_function("document.querySelector('#summary.show') !== null", timeout=8000)

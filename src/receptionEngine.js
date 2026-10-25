@@ -801,7 +801,7 @@
       key: w.key, day: w.day, date: w.date, start: w.start, end: w.end, tech: w.tech, techName: w.techName, arrive: w.arrive,
       dayLabel: w.dayLabel, spanLabel: w.spanLabel, service: svc ? svc.label : 'Service visit', zone: w.zone
     };
-    if (ctx && ctx.extraBusy) ctx.extraBusy.push({ tech: w.tech, day: w.day, start: hhmm(w.arrive), end: hhmm(w.arrive + w.minutes), zone: w.zone || 'phx', label: (svc ? svc.label : 'Visit') + (S.name ? ' (' + S.name + ')' : ''), booked: true, callId: call.id });
+    if (ctx && ctx.extraBusy) ctx.extraBusy.push({ tech: w.tech, day: w.day, start: hhmm(w.arrive), end: hhmm(w.arrive + w.minutes), zone: w.zone || 'phx', label: (svc ? svc.label : 'Visit') + (S.name ? ' (' + S.name + ')' : ''), who: S.name ? S.name.split(' ')[0] + (S.name.split(' ')[1] ? ' ' + S.name.split(' ')[1].charAt(0) + '.' : '') : null, booked: true, callId: call.id });
     out.parts.push('Done, you\'re booked for ' + w.dayLabel + ' between ' + w.spanLabel.replace(' to ', ' and ') + '.');
     out.actions.push({ type: 'book', tech: w.techName, window: w.dayLabel + ' ' + w.spanLabel, date: w.date });
     out.guard.push('Booked from the live calendar: drive time kept free, no double-booking');

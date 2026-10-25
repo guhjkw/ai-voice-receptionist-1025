@@ -40,7 +40,7 @@ tests/browser-check.py   Playwright checks that drive the real page
 ## Tests
 ```
 node tests/verify.js            # 78 passed, 0 failed
-python3 build.py && python3 tests/browser-check.py   # 43 passed, 0 failed
+python3 build.py && python3 tests/browser-check.py   # 44 passed, 0 failed
 ```
 Saved runs: `tests/test-output.txt`, `tests/browser-output.txt`. Screenshots in `tests/`.
 

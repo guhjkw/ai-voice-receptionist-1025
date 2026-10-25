@@ -38,6 +38,7 @@ PASS: gas sample: ends as an emergency transfer
 PASS: gas sample: owner alert is raised
 PASS: price sample: never guesses a system price
 PASS: price sample: books the real tomorrow-morning opening
+PASS: price sample: the call-time menu shows the sample's own time (Tue 10:20 AM)
 PASS: price sample: 'No texts, please' means no text is prepared
 PASS: burst pipe sample: on-call page after hours
 6. Rules change the behaviour
@@ -50,4 +51,4 @@ PASS: phone, panels, samples and prices fit the screen
 PASS: a call works on a phone
 PASS: no console or page errors
 
-43 passed, 0 failed
+44 passed, 0 failed
