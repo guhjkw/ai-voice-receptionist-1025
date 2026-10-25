@@ -817,7 +817,7 @@ footer b{color:var(--text)}
         var z = DATA.zones.filter(function (x) { return x.id === b.zone; })[0], tr = z ? z.travel : 30;
         var s = hm(b.start), e = hm(b.end);
         inner += '<span class="drive" style="left:' + pct(s - tr) + '%;width:' + (pct(s) - pct(s - tr)) + '%" title="Drive time"></span>';
-        inner += '<span class="blk' + (b.booked ? ' booked' : '') + '" style="left:' + pct(s) + '%;width:' + (pct(e) - pct(s)) + '%">' + esc(b.booked ? 'Booked · ' + (b.who || b.label) : b.label) + '<small>' + E.clock(s) + ' · ' + esc(z ? z.name : '') + '</small></span>';
+        inner += '<span class="blk' + (b.booked ? ' booked' : '') + '" style="left:' + pct(s) + '%;width:' + (pct(e) - pct(s)) + '%" title="' + esc(b.label) + '">' + esc(b.booked ? (b.who || 'Booked') : b.label) + '<small>' + (b.booked ? 'Booked · ' : '') + E.clock(s) + (b.booked ? '' : ' · ' + esc(z ? z.name : '')) + '</small></span>';
       });
       offers.filter(function (o) { return o.tech === t.id; }).forEach(function (o) {
         inner += '<span class="offer" style="left:' + pct(o.start) + '%;width:' + (pct(o.end) - pct(o.start)) + '%">Offered ' + esc(o.spanLabel) + '</span>';
