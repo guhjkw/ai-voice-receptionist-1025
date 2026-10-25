@@ -1,0 +1,53 @@
+0. HTML tag balance
+PASS: all tags closed and nested
+1. Page loads
+PASS: six sample calls are listed
+PASS: calendar shows three technicians with today's jobs
+PASS: call log is seeded with today's earlier calls
+PASS: input is locked until a call starts
+PASS: data check reports 0 skipped rows
+2. A full call typed by the visitor
+PASS: greeting says it is an AI assistant
+PASS: status shows the call is live
+PASS: job is understood as AC repair
+PASS: intent chip shows a service request
+PASS: heat triage question is asked at 108°F
+PASS: name field fills in
+PASS: address and area fill in
+PASS: two real windows are offered and drawn on the calendar
+PASS: choosing a window books it on the calendar
+PASS: guardrail list explains the booking
+PASS: consent is recorded before any text
+PASS: call ends with a summary card
+PASS: text to the customer is prepared because they said yes
+PASS: CRM record is attached
+PASS: call log gains a new row at the top
+PASS: metrics count the new call
+PASS: input locks after the call ends
+3. Invalid input is refused with a reason
+PASS: an empty reply shows a reason and adds nothing
+4. Guardrails
+PASS: outside ZIP: area field turns red and nothing is offered
+PASS: outside ZIP: guardrail is listed
+PASS: 'I don't smell gas' is not treated as a gas emergency
+PASS: no made-up price for a compressor
+PASS: honest answer when asked if it is AI
+5. Sample calls play through the same engine
+PASS: gas sample: safety steps first
+PASS: gas sample: ends as an emergency transfer
+PASS: gas sample: owner alert is raised
+PASS: price sample: never guesses a system price
+PASS: price sample: books the real tomorrow-morning opening
+PASS: price sample: 'No texts, please' means no text is prepared
+PASS: burst pipe sample: on-call page after hours
+6. Rules change the behaviour
+PASS: heat rule at 110°F: no heat triage question at 108°F
+PASS: Saturday 9:40 PM: greeting says the office is closed
+PASS: a person after hours becomes a callback, not a dead end
+7. Phone layout
+PASS: no sideways scrolling on a phone
+PASS: phone, panels, samples and prices fit the screen
+PASS: a call works on a phone
+PASS: no console or page errors
+
+43 passed, 0 failed

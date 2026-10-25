@@ -1,0 +1,930 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Copper Mesa · AI receptionist demo</title>
+<meta name="description" content="Portfolio demo: an AI voice receptionist for a heating, cooling and plumbing company. Talk to it or play a sample call. It triages emergencies, books real times from the technician calendar and never guesses a price. Invented company, real working logic.">
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#06090d;--bg2:#0a0f15;--s1:#0f151d;--s2:#141c26;--s3:#1b2532;--s4:#223042;
+  --line:rgba(255,255,255,.07);--line2:rgba(255,255,255,.13);--line3:rgba(255,255,255,.2);
+  --text:#eef3f7;--muted:#9aa9b8;--faint:#677788;
+  --acc:#2fe3c4;--acc2:#8ff5e2;--accInk:#03241e;--accSoft:rgba(47,227,196,.12);--accLine:rgba(47,227,196,.34);
+  --ok:#3ddc97;--okSoft:rgba(61,220,151,.13);--warn:#ffc35a;--warnSoft:rgba(255,195,90,.13);
+  --bad:#ff6b6b;--badSoft:rgba(255,107,107,.14);--info:#7aa7ff;--infoSoft:rgba(122,167,255,.13);--gold:#e7b84a;--goldSoft:rgba(231,184,74,.13);
+  --r:20px;--r2:14px;--r3:10px;
+  --shadow:0 40px 90px -40px rgba(0,0,0,.85),0 0 0 1px var(--line);
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Inter,Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 var(--sans);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+.wrap{max-width:1240px;margin:0 auto;padding:0 24px}
+.num,.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+:focus-visible{outline:2px solid var(--acc2);outline-offset:2px;border-radius:8px}
+section[id]{scroll-margin-top:80px}
+
+/* ribbon + nav */
+.ribbon{background:linear-gradient(90deg,#05211c,#0b1117 35%,#0b1117 65%,#05211c);border-bottom:1px solid var(--line);font-size:13px;color:var(--muted)}
+.ribbon .wrap{display:flex;gap:10px;align-items:center;justify-content:center;padding-top:9px;padding-bottom:9px;flex-wrap:wrap;text-align:center}
+.ribbon b{color:var(--text);font-weight:650}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--acc);box-shadow:0 0 0 4px var(--accSoft);display:inline-block}
+header.nav{position:sticky;top:0;z-index:40;background:rgba(6,9,13,.78);backdrop-filter:saturate(160%) blur(14px);-webkit-backdrop-filter:saturate(160%) blur(14px);border-bottom:1px solid var(--line)}
+.nav .wrap{display:flex;align-items:center;justify-content:space-between;height:66px;gap:16px}
+.brand{display:flex;align-items:center;gap:11px;text-decoration:none}
+.logo{width:34px;height:34px;border-radius:10px;background:conic-gradient(from 210deg,#c8743c,#f0a36b,#2fe3c4,#c8743c);display:grid;place-items:center;box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)}
+.logo svg{width:18px;height:18px}
+.brand .wm{font-weight:780;letter-spacing:-.02em;font-size:18px;line-height:1}
+.brand .wm small{display:block;font-size:10px;letter-spacing:.3em;color:var(--faint);font-weight:650;margin-top:5px}
+.links{display:flex;gap:24px;font-size:14.5px;color:var(--muted)}
+.links a{text-decoration:none}.links a:hover{color:var(--text)}
+.callbtn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--accLine);padding:9px 15px;border-radius:999px;font-size:14px;font-weight:650;background:var(--accSoft);color:var(--acc2)}
+.callbtn:hover{background:rgba(47,227,196,.2)}
+
+/* hero */
+.hero{position:relative;padding:40px 0 18px;overflow:hidden}
+.hero:before{content:"";position:absolute;inset:-30% -10% auto -10%;height:760px;background:radial-gradient(640px 380px at 16% 22%,rgba(47,227,196,.16),transparent 70%),radial-gradient(560px 320px at 88% 0%,rgba(200,116,60,.14),transparent 70%);pointer-events:none}
+.hero .wrap{position:relative;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:48px;align-items:end}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;background:var(--accSoft);color:var(--acc2);font-size:13px;font-weight:650;border:1px solid var(--accLine)}
+h1{font-size:clamp(34px,4.4vw,54px);line-height:1.04;letter-spacing:-.035em;margin:16px 0 14px;font-weight:820}
+h1 .hl{background:linear-gradient(100deg,var(--acc2),var(--acc) 50%,#f0a36b);-webkit-background-clip:text;background-clip:text;color:transparent}
+.lede{font-size:18.5px;color:var(--muted);max-width:640px;margin:0}
+.lede b{color:var(--text);font-weight:650}
+.benefits{display:grid;gap:12px}
+.ben{display:flex;gap:14px;align-items:flex-start;padding:15px 16px;border-radius:var(--r2);background:linear-gradient(180deg,var(--s1),rgba(15,21,29,.6));border:1px solid var(--line)}
+.ben i{flex:none;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:var(--accSoft);color:var(--acc);font-style:normal;font-size:17px}
+.ben b{display:block;font-size:15.5px;margin-bottom:2px}
+.ben span{color:var(--muted);font-size:14px;line-height:1.45}
+
+/* tool */
+.tool{padding:22px 0 30px}
+.tool .grid{display:grid;grid-template-columns:420px minmax(0,1fr);gap:22px;align-items:start}
+.card{background:linear-gradient(180deg,var(--s1),var(--bg2));border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.card h3{margin:0;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);font-weight:700}
+.chd{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px 0}
+
+/* phone */
+.phone{position:relative;border-radius:30px;overflow:hidden;background:linear-gradient(180deg,#0e151e,#090d13);border:1px solid var(--line2);box-shadow:0 50px 110px -45px rgba(0,0,0,.95),0 0 0 6px #0b1016,0 0 0 7px var(--line2)}
+.ph-top{padding:16px 18px 14px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,rgba(47,227,196,.07),transparent)}
+.ph-row{display:flex;align-items:center;gap:12px}
+.avatar{width:44px;height:44px;border-radius:50%;background:radial-gradient(circle at 30% 30%,#8ff5e2,#2fe3c4 45%,#0d7f6f);display:grid;place-items:center;box-shadow:0 0 0 4px rgba(47,227,196,.12)}
+.avatar svg{width:22px;height:22px}
+.who b{display:block;font-size:16px;letter-spacing:-.01em}
+.who span{font-size:12.5px;color:var(--muted)}
+.status{margin-left:auto;display:inline-flex;align-items:center;gap:7px;padding:6px 11px;border-radius:999px;font-size:12.5px;font-weight:700;background:var(--s3);color:var(--muted);border:1px solid var(--line)}
+.status.live{background:var(--badSoft);color:#ffb3b3;border-color:rgba(255,107,107,.3)}
+.status.live:before{content:"";width:7px;height:7px;border-radius:50%;background:var(--bad);animation:pulse 1.2s infinite}
+.status.done{background:var(--okSoft);color:var(--ok);border-color:rgba(61,220,151,.3)}
+@keyframes pulse{50%{opacity:.25}}
+.ph-meta{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:12px;font-size:12.5px;color:var(--muted)}
+.ph-meta select{background:var(--s2);border:1px solid var(--line2);border-radius:9px;padding:5px 8px;font-size:12.5px;color:var(--text)}
+.wave{display:flex;align-items:center;justify-content:center;gap:3px;height:34px;margin-top:12px}
+.wave i{width:3px;height:6px;border-radius:3px;background:var(--s4);transition:background .2s}
+.wave.agent i{background:var(--acc);animation:wv .9s ease-in-out infinite}
+.wave.caller i{background:#dfe7ef;animation:wv .8s ease-in-out infinite}
+.wave i:nth-child(3n){animation-delay:-.2s}.wave i:nth-child(3n+1){animation-delay:-.45s}.wave i:nth-child(4n){animation-delay:-.65s}.wave i:nth-child(5n){animation-delay:-.1s}
+@keyframes wv{0%,100%{height:5px}50%{height:28px}}
+.wave-label{text-align:center;font-size:11.5px;color:var(--faint);letter-spacing:.12em;text-transform:uppercase;margin-top:4px;height:16px}
+.transcript{height:410px;overflow-y:auto;padding:16px 16px 6px;display:flex;flex-direction:column;gap:10px;scroll-behavior:smooth;position:relative}
+.empty{margin:auto;text-align:center;color:var(--muted);font-size:14.5px;max-width:300px}
+.empty b{color:var(--text)}
+.msg{max-width:86%;display:flex;flex-direction:column;gap:3px;animation:in .25s ease-out}
+@keyframes in{from{opacity:0;transform:translateY(6px)}}
+.msg .b{padding:10px 13px;border-radius:16px;font-size:14.5px;line-height:1.45;white-space:pre-wrap}
+.msg.agent{align-self:flex-start}
+.msg.agent .b{background:var(--s2);border:1px solid var(--line);border-top-left-radius:5px}
+.msg.caller{align-self:flex-end;align-items:flex-end}
+.msg.caller .b{background:linear-gradient(180deg,#14403a,#0f2f2b);border:1px solid var(--accLine);border-top-right-radius:5px}
+.msg .meta{font-size:11px;color:var(--faint);padding:0 6px}
+.msg.sys{align-self:center;max-width:100%}
+.msg.sys .b{background:transparent;border:1px dashed var(--line2);color:var(--muted);font-size:12.5px;padding:6px 11px;border-radius:999px}
+.msg.danger .b{border-color:rgba(255,107,107,.45);background:linear-gradient(180deg,#3a1518,#251013)}
+.typing{align-self:flex-start;display:flex;gap:4px;padding:12px 14px;background:var(--s2);border:1px solid var(--line);border-radius:16px;border-top-left-radius:5px}
+.typing i{width:6px;height:6px;border-radius:50%;background:var(--muted);animation:tp 1s infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+@keyframes tp{50%{opacity:.25;transform:translateY(-2px)}}
+.composer{border-top:1px solid var(--line);padding:12px;display:flex;gap:8px;align-items:center;background:rgba(6,9,13,.6)}
+.composer input{flex:1;min-width:0;background:var(--s2);border:1px solid var(--line2);border-radius:12px;padding:11px 12px;font-size:14.5px}
+.composer input:focus{outline:none;border-color:var(--accLine)}
+.ibtn{flex:none;width:42px;height:42px;border-radius:12px;border:1px solid var(--line2);background:var(--s2);display:grid;place-items:center;color:var(--text)}
+.ibtn svg{width:18px;height:18px}
+.ibtn.pri{background:var(--acc);color:var(--accInk);border-color:transparent}
+.ibtn.rec{background:var(--bad);border-color:transparent;color:#fff;animation:pulse 1.2s infinite}
+.ibtn[disabled]{opacity:.4;cursor:not-allowed}
+.err{min-height:0;font-size:12.5px;color:#ffb3b3;padding:0 14px}
+.err:not(:empty){padding:0 14px 10px}
+.ph-actions{display:flex;gap:8px;padding:0 12px 14px;background:rgba(6,9,13,.6)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:12px;padding:11px 16px;font-weight:700;font-size:14.5px;border:1px solid var(--line2);background:var(--s2);text-decoration:none;white-space:nowrap}
+.btn.pri{background:linear-gradient(180deg,var(--acc2),var(--acc));color:var(--accInk);border-color:transparent;box-shadow:0 10px 30px -12px rgba(47,227,196,.55)}
+.btn.pri:hover{filter:brightness(1.05)}
+.btn.ghost:hover{border-color:var(--line3)}
+.btn.sm{padding:8px 12px;font-size:13px;border-radius:10px}
+.ph-actions .btn{flex:1}
+
+/* summary overlay */
+.tbox{position:relative;overflow:hidden}
+.summary{position:absolute;inset:0;background:#090d13;padding:16px;overflow-y:auto;transform:translateY(100%);visibility:hidden;pointer-events:none;transition:transform .45s cubic-bezier(.2,.8,.2,1),visibility 0s linear .45s;display:flex;flex-direction:column;gap:12px}
+.summary.show{transform:none;visibility:visible;pointer-events:auto;transition:transform .45s cubic-bezier(.2,.8,.2,1)}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;font-size:12px;font-weight:750;letter-spacing:.02em;background:var(--s3);color:var(--muted);border:1px solid var(--line)}
+.badge.booked,.badge.ok{background:var(--okSoft);color:var(--ok);border-color:rgba(61,220,151,.3)}
+.badge.emergency_transfer,.badge.danger{background:var(--badSoft);color:#ffadad;border-color:rgba(255,107,107,.35)}
+.badge.oncall_dispatch,.badge.urgent,.badge.priority{background:var(--warnSoft);color:var(--warn);border-color:rgba(255,195,90,.32)}
+.badge.transferred,.badge.callback{background:var(--infoSoft);color:#b6ccff;border-color:rgba(122,167,255,.3)}
+.badge.spam,.badge.out_of_area,.badge.info,.badge.abandoned{background:var(--s3);color:var(--muted)}
+.sum-h{font-size:19px;font-weight:780;letter-spacing:-.015em;line-height:1.25;margin:4px 0 0}
+.sum-sub{font-size:12.5px;color:var(--faint)}
+.mini{border:1px solid var(--line);border-radius:12px;padding:11px 12px;background:var(--s1)}
+.mini .k{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);font-weight:700;margin-bottom:5px;display:flex;justify-content:space-between;gap:8px}
+.mini .v{font-size:13.5px;line-height:1.45}
+.mini .v.sms{background:#1d2a20;border:1px solid rgba(61,220,151,.22);border-radius:12px;border-bottom-left-radius:4px;padding:9px 11px}
+.mini .v.alert{color:#ffd9a3}
+.mini .v.none{color:var(--faint)}
+details.crm summary{cursor:pointer;font-size:13px;color:var(--acc2);font-weight:650}
+details.crm pre{margin:8px 0 0;max-height:220px;overflow:auto;font:11.5px/1.5 var(--mono);color:#cfe3ef;background:#05080c;border:1px solid var(--line);border-radius:10px;padding:10px}
+
+/* samples */
+.samples{margin-top:18px}
+.samples h4,.breaks h4{margin:0 0 10px;font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sbtn{text-align:left;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--s1);display:flex;flex-direction:column;gap:2px;transition:border-color .2s,background .2s}
+.sbtn:hover{border-color:var(--accLine)}
+.sbtn b{font-size:13.5px}
+.sbtn span{font-size:12px;color:var(--muted);line-height:1.35}
+.sbtn.on{border-color:var(--acc);background:var(--accSoft)}
+.sbtn[disabled]{opacity:.45;cursor:not-allowed}
+.stoprow{display:none;margin-top:8px}
+.stoprow.show{display:flex}
+.breaks{margin-top:18px;padding:14px 16px;border-radius:14px;border:1px dashed var(--line2);background:rgba(15,21,29,.5)}
+.breaks ul{margin:0;padding-left:18px;color:var(--muted);font-size:13.5px;display:grid;gap:5px}
+.breaks code{font:12.5px var(--mono);color:var(--acc2);background:rgba(47,227,196,.08);padding:1px 5px;border-radius:5px}
+
+/* right column */
+.side{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;min-width:0}
+.side>.card{min-width:0}
+.intent{display:flex;align-items:center;gap:12px;padding:14px 18px 6px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:999px;background:var(--s3);border:1px solid var(--line2);font-size:13.5px;font-weight:700}
+.chip.hot{background:var(--accSoft);border-color:var(--accLine);color:var(--acc2)}
+.chip.red{background:var(--badSoft);border-color:rgba(255,107,107,.4);color:#ffb3b3}
+.meter{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--faint)}
+.meter .bar{width:110px;height:6px;border-radius:6px;background:var(--s3);overflow:hidden}
+.meter .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--acc),var(--acc2));transition:width .5s}
+.next{margin-left:auto;font-size:13px;color:var(--muted)}
+.next b{color:var(--text);font-weight:650}
+.fields{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:12px 18px 6px}
+.f{border:1px solid var(--line);border-radius:12px;padding:10px 11px 11px;background:var(--s1);min-width:0;transition:border-color .3s,background .3s}
+.f .k{display:flex;align-items:center;gap:6px;font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);font-weight:750}
+.f .k i{width:14px;height:14px;border-radius:50%;border:1.5px solid var(--line3);display:grid;place-items:center;font-style:normal;font-size:9px;color:transparent;flex:none}
+.f.set .k i{background:var(--acc);border-color:var(--acc);color:var(--accInk)}
+.f .v{margin-top:5px;font-size:14px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.f .v.ph{color:var(--faint);font-weight:500}
+.f.flash{border-color:var(--acc);background:rgba(47,227,196,.08)}
+.f.warn .v{color:var(--warn)}.f.bad .v{color:#ff9b9b}.f.good .v{color:var(--ok)}
+.problem{margin:4px 18px 0;padding:10px 12px;border-radius:12px;background:var(--s1);border:1px solid var(--line);font-size:13.5px;color:var(--muted);min-height:20px}
+.problem b{color:var(--text);font-weight:600}
+.acts{display:flex;flex-wrap:wrap;gap:8px;padding:10px 18px 0;min-height:10px}
+.act{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;padding:6px 10px;border-radius:9px;background:var(--okSoft);color:var(--ok);border:1px solid rgba(61,220,151,.28)}
+.act.x{background:var(--infoSoft);color:#b6ccff;border-color:rgba(122,167,255,.3)}
+.act.r{background:var(--badSoft);color:#ffb3b3;border-color:rgba(255,107,107,.32)}
+.guards{padding:12px 18px 18px}
+.guards h5{margin:6px 0 8px;font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);display:flex;justify-content:space-between}
+.guards ul{list-style:none;margin:0;padding:0;display:grid;gap:6px;max-height:182px;overflow:auto}
+.guards li{display:flex;gap:9px;align-items:flex-start;font-size:13.5px;color:var(--muted);line-height:1.4}
+.guards li:before{content:"";flex:none;width:16px;height:16px;margin-top:2px;background:no-repeat center/16px url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232fe3c4' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3l7 3v6c0 4.4-3 7.6-7 9-4-1.4-7-4.6-7-9V6z'/%3E%3Cpath d='M9 12l2 2 4-4'/%3E%3C/svg%3E")}
+.guards li.new{color:var(--text);animation:in .3s}
+.guards .none{color:var(--faint);font-size:13px}
+
+/* calendar */
+.cal{padding:12px 18px 18px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs button{padding:6px 11px;border-radius:9px;border:1px solid var(--line);background:var(--s1);font-size:12.5px;font-weight:650;color:var(--muted)}
+.tabs button.on{background:var(--accSoft);border-color:var(--accLine);color:var(--acc2)}
+.calscroll{overflow-x:auto;margin-top:12px}
+.calin{min-width:620px}
+.axis{display:grid;grid-template-columns:96px 1fr;font-size:11px;color:var(--faint)}
+.axis .ticks{position:relative;height:18px}
+.axis .ticks span{position:absolute;transform:translateX(-50%)}
+.trow{display:grid;grid-template-columns:96px 1fr;align-items:center;gap:0;margin-top:8px}
+.tname{font-size:13px;font-weight:700}
+.tname small{display:block;font-size:11px;color:var(--faint);font-weight:600}
+.track{position:relative;height:44px;border-radius:10px;background:repeating-linear-gradient(90deg,var(--s1) 0 calc(100%/11 - 1px),var(--line) calc(100%/11 - 1px) calc(100%/11));border:1px solid var(--line);overflow:hidden}
+.blk{position:absolute;top:5px;bottom:5px;border-radius:7px;background:var(--s4);border:1px solid var(--line2);font-size:11px;padding:3px 6px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:#c6d3df;line-height:1.25}
+.blk small{display:block;color:var(--faint);font-size:10px}
+.drive{position:absolute;top:12px;bottom:12px;border-radius:5px 0 0 5px;background:repeating-linear-gradient(135deg,rgba(255,255,255,.12) 0 4px,transparent 4px 8px)}
+.blk.booked{background:linear-gradient(180deg,#22c9ad,#14907c);color:#02201b;border-color:transparent;font-weight:750;box-shadow:0 0 0 3px rgba(47,227,196,.18)}
+.blk.booked small{color:#063b33}
+.offer{position:absolute;top:3px;bottom:3px;border-radius:8px;border:2px dashed var(--acc);background:rgba(47,227,196,.07);font-size:10.5px;color:var(--acc2);padding:2px 6px;font-weight:750;animation:in .3s}
+.nowline{position:absolute;top:0;bottom:0;width:2px;background:var(--bad);box-shadow:0 0 8px var(--bad)}
+.closed{padding:16px;border:1px dashed var(--line2);border-radius:12px;color:var(--muted);text-align:center;margin-top:12px;font-size:14px}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;font-size:11.5px;color:var(--faint)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:16px;height:10px;border-radius:3px;display:inline-block}
+
+/* sections */
+.blk-sec{padding:70px 0}
+.blk-sec.alt{background:linear-gradient(180deg,var(--bg2),var(--bg));border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.sec-h{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;margin-bottom:26px;flex-wrap:wrap}
+.sec-h h2{font-size:clamp(28px,3.4vw,40px);letter-spacing:-.03em;line-height:1.08;margin:8px 0 0;font-weight:800}
+.sec-h p{color:var(--muted);max-width:520px;margin:0}
+.kick{font-size:12.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--acc);font-weight:750}
+.metrics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:16px}
+.metric{padding:16px;border-radius:var(--r2);border:1px solid var(--line);background:var(--s1)}
+.metric b{display:block;font-size:30px;letter-spacing:-.03em;font-family:var(--mono)}
+.metric span{font-size:13px;color:var(--muted)}
+.logtbl{width:100%;border-collapse:collapse;font-size:14px}
+.logwrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r2);background:var(--s1)}
+.logtbl th{text-align:left;font-size:11.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);padding:12px 14px;border-bottom:1px solid var(--line)}
+.logtbl td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+.logtbl tr:last-child td{border-bottom:0}
+.logtbl tr.new td{background:rgba(47,227,196,.05)}
+.logtbl .muted{color:var(--muted);font-size:13px}
+.rules{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.rule{padding:16px;border-radius:var(--r2);border:1px solid var(--line);background:var(--s1)}
+.rule label{display:flex;justify-content:space-between;gap:10px;font-weight:700;font-size:14.5px}
+.rule label output{font-family:var(--mono);color:var(--acc2)}
+.rule p{margin:6px 0 10px;color:var(--muted);font-size:13px;line-height:1.45}
+.rule input[type=range]{width:100%;accent-color:var(--acc)}
+.rule select{background:var(--s2);border:1px solid var(--line2);border-radius:9px;padding:6px 8px;width:100%}
+.switch{position:relative;width:44px;height:26px;flex:none}
+.switch input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
+.switch span{position:absolute;inset:0;border-radius:99px;background:var(--s4);transition:.2s;pointer-events:none}
+.switch span:after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s}
+.switch input:checked+span{background:var(--acc)}
+.switch input:checked+span:after{left:21px}
+.rnote{margin-top:12px;color:var(--faint);font-size:13px}
+.steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.step{padding:20px;border-radius:var(--r2);border:1px solid var(--line);background:var(--s1)}
+.step .n{font-family:var(--mono);color:var(--acc);font-size:13px;font-weight:700}
+.step h4{margin:8px 0 6px;font-size:17px;letter-spacing:-.01em}
+.step p{margin:0;color:var(--muted);font-size:14px}
+.step.you{border-color:var(--accLine);background:linear-gradient(180deg,rgba(47,227,196,.07),var(--s1))}
+.hood{display:grid;grid-template-columns:1.1fr 1fr;gap:22px;align-items:start}
+.tree{font:13px/1.75 var(--mono);background:#05080c;border:1px solid var(--line);border-radius:var(--r2);padding:16px 18px;color:#b9cad8;overflow-x:auto;white-space:pre}
+.tree b{color:var(--acc2);font-weight:600}
+.hood p{color:var(--muted);margin:0 0 12px}
+.checks{display:flex;gap:12px;flex-wrap:wrap;margin-top:6px}
+.checks span{padding:8px 12px;border-radius:10px;background:var(--okSoft);color:var(--ok);font-weight:700;font-size:13.5px;border:1px solid rgba(61,220,151,.25)}
+.tiers{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:stretch}
+.tier{position:relative;padding:24px;border-radius:var(--r);border:1px solid var(--line);background:var(--s1);display:flex;flex-direction:column}
+.tier.feat{border-color:rgba(231,184,74,.55);background:linear-gradient(180deg,rgba(231,184,74,.09),var(--s1) 40%);box-shadow:0 30px 70px -40px rgba(231,184,74,.45)}
+.tier .tag{position:absolute;top:-12px;left:24px;background:var(--gold);color:#241a02;font-size:11.5px;font-weight:800;letter-spacing:.08em;padding:4px 10px;border-radius:999px;text-transform:uppercase}
+.tier h4{margin:0;font-size:18px}
+.tier .for{color:var(--muted);font-size:13.5px;margin:4px 0 14px}
+.price{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.price b{font-size:38px;letter-spacing:-.03em}
+.price s{color:var(--faint);font-size:15px}
+.tier ul{list-style:none;padding:0;margin:16px 0 0;display:grid;gap:8px;font-size:14px;color:#cfdae4}
+.tier li{display:flex;gap:9px}
+.tier li:before{content:"✓";color:var(--acc);font-weight:800}
+.tier li.bonus:before{content:"+";color:var(--gold)}
+.tier .ms{margin-top:auto;padding-top:16px;font-size:12.5px;color:var(--faint);border-top:1px solid var(--line);margin-top:18px}
+.tier .ms b{color:var(--muted)}
+.cta{padding:34px;border-radius:24px;background:radial-gradient(500px 240px at 10% 0%,rgba(47,227,196,.18),transparent 70%),linear-gradient(180deg,var(--s2),var(--s1));border:1px solid var(--accLine);display:grid;grid-template-columns:1.3fr 1fr;gap:30px;align-items:center}
+.cta h2{margin:0 0 10px;font-size:clamp(26px,3vw,36px);letter-spacing:-.03em;line-height:1.1}
+.cta p{color:var(--muted);margin:0 0 6px}
+.cta .urg{color:var(--warn);font-size:14px;margin-top:12px}
+.need{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.need li{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:12px;background:rgba(6,9,13,.5);border:1px solid var(--line);font-size:14px}
+.need li b{font-family:var(--mono);color:var(--acc)}
+footer{padding:40px 0 60px;border-top:1px solid var(--line);color:var(--muted);font-size:13.5px}
+footer .scope{max-width:900px}
+footer b{color:var(--text)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);opacity:0;background:var(--s3);border:1px solid var(--line2);padding:10px 16px;border-radius:12px;font-size:14px;transition:.25s;z-index:60;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%)}
+
+@media (max-width:1120px){
+  .tool .grid{grid-template-columns:380px minmax(0,1fr)}
+  .fields{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .metrics{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media (max-width:980px){
+  .hero .wrap,.tool .grid,.hood,.cta{grid-template-columns:minmax(0,1fr)}
+  .links{display:none}
+  .steps,.tiers,.rules{grid-template-columns:minmax(0,1fr)}
+  .metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:560px){
+  .wrap{padding:0 16px}
+  .ribbon .long{display:none}
+  .callbtn .t{display:none}
+  .hero{padding-top:34px}
+  .transcript{height:380px}
+  .sgrid{grid-template-columns:minmax(0,1fr)}
+  .fields{grid-template-columns:repeat(2,minmax(0,1fr));padding:12px 14px 6px}
+  .chd,.intent,.acts,.guards,.cal{padding-left:14px;padding-right:14px}
+  .problem{margin:4px 14px 0}
+  .next{margin-left:0;width:100%}
+  .cta{padding:22px}
+  .blk-sec{padding:52px 0}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}
+</style>
+</head>
+<body>
+<div class="ribbon"><div class="wrap"><span class="dot"></span><b>Portfolio demo</b><span class="long">· Copper Mesa is an invented company. The receptionist logic is real code you can talk to.</span><span>· Start a call or play a sample</span></div></div>
+<header class="nav"><div class="wrap">
+  <a class="brand" href="#top" aria-label="Copper Mesa Air and Plumbing"><span class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#06231e" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18l6-9 4 6 3-4 5 7"/></svg></span><span class="wm">Copper Mesa<small>AIR &amp; PLUMBING</small></span></a>
+  <nav class="links"><a href="#try">Try it</a><a href="#log">Call log</a><a href="#rules">Rules</a><a href="#how">How it works</a><a href="#offer">Pricing</a></nav>
+  <button class="callbtn" type="button" data-start><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg><span class="t">Call (602) 555-0142</span></button>
+</div></header>
+
+<section class="hero" id="top"><div class="wrap">
+  <div>
+    <span class="eyebrow"><span class="dot"></span>AI voice receptionist · live demo</span>
+    <h1>Every call answered, triaged and booked. <span class="hl">Even at 9:40 PM on a Saturday.</span></h1>
+    <p class="lede">Talk to <b>Ava</b>, the AI receptionist for an invented heating, cooling and plumbing company in Phoenix. It's a live tool, not a video: say anything, and the logic runs again. She books <b>real times from the technician calendar</b>, reads safety steps in an emergency, and <b>never guesses a price</b>.</p>
+  </div>
+  <div class="benefits">
+    <div class="ben"><i>☎</i><div><b>No call goes to voicemail</b><span>Nights, weekends and lunch rushes get the same answer in one ring.</span></div></div>
+    <div class="ben"><i>⚑</i><div><b>Emergencies come first</b><span>Gas, flooding and heat risks get safety steps, then a person.</span></div></div>
+    <div class="ben"><i>✓</i><div><b>Never double-books</b><span>Times come from the crew calendar, with drive time kept free.</span></div></div>
+  </div>
+</div></section>
+
+<section class="tool" id="try"><div class="wrap grid">
+  <div>
+    <div class="phone" id="phone">
+      <div class="ph-top">
+        <div class="ph-row">
+          <div class="avatar"><svg viewBox="0 0 24 24" fill="none" stroke="#04302a" stroke-width="2.4" stroke-linecap="round"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2"/></svg></div>
+          <div class="who"><b>Ava · AI receptionist</b><span>Copper Mesa Air &amp; Plumbing</span></div>
+          <span class="status" id="status">Ready</span>
+        </div>
+        <div class="ph-meta">
+          <label>Call time <select id="callTime" aria-label="Call time"></select></label>
+          <span id="openNote" class="mono">Office open</span>
+          <span id="timer" class="mono">0:00</span>
+        </div>
+        <div class="wave" id="wave" aria-hidden="true"></div>
+        <div class="wave-label" id="waveLabel"></div>
+      </div>
+      <div class="tbox">
+        <div class="transcript" id="transcript" aria-live="polite">
+          <div class="empty" id="empty"><b>Press Start a call</b> and type (or say) what a caller would say. Or play a sample call below and watch Ava work.</div>
+        </div>
+        <div class="summary" id="summary" aria-live="polite"></div>
+      </div>
+      <div class="composer">
+        <input id="input" type="text" autocomplete="off" placeholder="Start a call, then type what the caller says" aria-label="What the caller says" disabled>
+        <button class="ibtn" id="micBtn" type="button" title="Talk instead of typing" aria-label="Talk instead of typing" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v4"/></svg></button>
+        <button class="ibtn pri" id="sendBtn" type="button" aria-label="Send" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+      </div>
+      <div class="err" id="err" role="alert"></div>
+      <div class="ph-actions">
+        <button class="btn pri" id="startBtn" type="button" data-start>Start a call</button>
+        <button class="btn ghost" id="voiceBtn" type="button" aria-pressed="true">Voice on</button>
+      </div>
+    </div>
+    <div class="samples">
+      <h4>Play a sample call</h4>
+      <div class="sgrid" id="samples"></div>
+      <div class="stoprow" id="stopRow"><button class="btn sm ghost" id="stopBtn" type="button">Stop the sample</button></div>
+    </div>
+    <div class="breaks">
+      <h4>Try to break it</h4>
+      <ul>
+        <li>Say <code>I don't smell gas, but my heater won't light</code>. It is not treated as a gas emergency.</li>
+        <li>Give a ZIP outside the area, like <code>85338</code>. Nothing gets booked.</li>
+        <li>Ask <code>how much is a new compressor?</code> It won't make up a price.</li>
+        <li>Ask <code>are you a robot?</code>, or say <code>neither</code> when it offers two times.</li>
+        <li>Switch the call time to <b>Sun 9:30 AM</b>, or raise the heat rule in <a href="#rules">Rules</a>.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="side">
+    <div class="card" id="brain">
+      <div class="chd"><h3>What Ava understood</h3><span class="mono" style="font-size:12px;color:var(--faint)" id="turnNo">waiting for a call</span></div>
+      <div class="intent">
+        <span class="chip" id="intent">Nothing yet</span>
+        <span class="meter">Match strength <span class="bar"><i id="conf"></i></span> <span id="confNum" class="num">0%</span></span>
+        <span class="next" id="nextStep">Next: <b>start a call</b></span>
+      </div>
+      <div class="fields" id="fields"></div>
+      <div class="problem" id="problem">The caller's own words about the problem show here.</div>
+      <div class="acts" id="acts"></div>
+      <div class="guards"><h5><span>Guardrails used on this call</span><span id="gCount" class="num">0</span></h5><ul id="guards"><li class="none" style="padding:0">None yet.</li></ul></div>
+    </div>
+    <div class="card" id="calendar">
+      <div class="chd"><h3>Technician calendar</h3><div class="tabs" id="calTabs"></div></div>
+      <div class="cal" id="cal"></div>
+    </div>
+  </div>
+</div></section>
+
+<section class="blk-sec alt" id="log"><div class="wrap">
+  <div class="sec-h"><div><span class="kick">The owner's view</span><h2>Every call, logged and sorted.</h2></div><p>Your calls from this page join the log as soon as they end, with the outcome, the summary and the record that would go to the CRM.</p></div>
+  <div class="metrics" id="metrics"></div>
+  <div class="logwrap"><table class="logtbl"><thead><tr><th>Time</th><th>Caller</th><th>What happened</th><th>Outcome</th></tr></thead><tbody id="logBody"></tbody></table></div>
+</div></section>
+
+<section class="blk-sec" id="rules"><div class="wrap">
+  <div class="sec-h"><div><span class="kick">Set up the way you work</span><h2>Change the rules. Ava follows them.</h2></div><p>These are real settings in the engine. Change one and the next reply uses it. A delivered build is set to your hours, prices, area and emergency policy.</p></div>
+  <div class="rules">
+    <div class="rule"><label for="rHigh">Today's high <output id="oHigh" class="num">108°F</output></label><p>Heat triage only runs when it's this hot outside.</p><input type="range" id="rHigh" min="80" max="118" step="1" value="108"></div>
+    <div class="rule"><label for="rHeat">Heat priority from <output id="oHeat" class="num">100°F</output></label><p>From this temperature, a no-AC call asks who is at home and moves vulnerable households up.</p><input type="range" id="rHeat" min="90" max="115" step="1" value="100"></div>
+    <div class="rule"><label for="rOffers">Times offered at once <output id="oOffers" class="num">2</output></label><p>How many real appointment windows Ava offers in one question.</p><input type="range" id="rOffers" min="1" max="3" step="1" value="2"></div>
+    <div class="rule"><label>Text confirmations <span class="switch"><input type="checkbox" id="rTexts" checked aria-label="Text confirmations"><span></span></span></label><p>Ask for consent, then text a confirmation. Off means no texts at all. It never texts without a yes.</p></div>
+    <div class="rule"><label>Live transfer in office hours <span class="switch"><input type="checkbox" id="rXfer" checked aria-label="Live transfer in office hours"><span></span></span></label><p>Off means a callback within the hour instead of a live transfer.</p></div>
+    <div class="rule"><label>Recording notice <span class="switch"><input type="checkbox" id="rRec" checked aria-label="Recording notice"><span></span></span></label><p>Says "this call may be recorded" in the greeting. Ava always says she is an AI assistant.</p></div>
+  </div>
+  <p class="rnote" id="rNote">Changes apply from the next reply.</p>
+</div></section>
+
+<section class="blk-sec alt" id="how"><div class="wrap">
+  <div class="sec-h"><div><span class="kick">How it works</span><h2>Four steps, one of them yours.</h2></div></div>
+  <div class="steps">
+    <div class="step"><span class="n">01</span><h4>The call is answered</h4><p>Your number forwards to Ava when you're busy, closed or don't pick up. She says she's an AI assistant and asks how to help.</p></div>
+    <div class="step"><span class="n">02</span><h4>It's triaged</h4><p>Danger first (gas, CO, smoke), then flooding, then heat risk. Safety steps are read before anything else.</p></div>
+    <div class="step"><span class="n">03</span><h4>It's booked or handed over</h4><p>Real times from the crew calendar, or a live transfer, on-call page or callback. Every call ends with a record and a summary.</p></div>
+    <div class="step you"><span class="n">04 · You</span><h4>You set the rules</h4><p>Your prices, hours, service area, on-call rota and what counts as an emergency. Ava answers only from them.</p></div>
+  </div>
+</div></section>
+
+<section class="blk-sec" id="built"><div class="wrap hood">
+  <div>
+    <div class="sec-h" style="margin-bottom:14px"><div><span class="kick">Under the hood</span><h2>One engine. Tested.</h2></div></div>
+    <p>The page and the tests load the <b>same</b> engine file, so what you just used is exactly what was tested. Hand <span class="mono">src/</span> and <span class="mono">tests/</span> to your developer, or never open them.</p>
+    <div class="checks"><span id="chkEngine">78 engine checks pass</span><span id="chkBrowser">43 browser checks pass</span><span id="dataCheck">Data check: 0 rows skipped</span></div>
+  </div>
+  <div class="tree"><b>index.html</b>              this page
+<b>src/receptionEngine.js</b>  understanding, triage, calendar,
+                        guardrails, the call record
+<b>data/company.json</b>       invented prices, area, crew, calendar
+<b>tests/verify.js</b>         engine checks (node)
+<b>tests/browser-check.py</b>  checks that drive this page</div>
+</div></section>
+
+<section class="blk-sec alt" id="offer"><div class="wrap">
+  <div class="sec-h"><div><span class="kick">Your receptionist</span><h2>Three ways to start.</h2></div><p>Fixed prices, paid by milestone. Phone and AI usage are billed to your own accounts at cost.</p></div>
+  <div class="tiers">
+    <div class="tier">
+      <h4>Missed-call receptionist</h4><p class="for">For a single-location shop that misses calls after hours.</p>
+      <div class="price"><b>$2,500</b></div>
+      <ul><li>Answers every missed and after-hours call</li><li>Your prices, hours and FAQ, nothing invented</li><li>Books into one calendar</li><li>Summary of every call to your phone</li><li>14 days of tuning after go-live</li></ul>
+      <p class="ms"><b>Milestones:</b> $750 setup and test mode · $1,125 live after your sign-off · $625 after 14 days</p>
+    </div>
+    <div class="tier feat">
+      <span class="tag">Best value</span>
+      <h4>Full-service receptionist</h4><p class="for">Everything in this demo, on your number and your calendar.</p>
+      <div class="price"><b>$5,000</b><s>worth $10,000+</s></div>
+      <ul><li>Everything in Missed-call</li><li>Emergency triage with your safety steps</li><li>Live transfer, on-call paging and callbacks</li><li>CRM or field-service software sync (HighLevel, HubSpot or yours, via its API)</li><li>Text confirmations with consent (after A2P registration)</li><li>Call log and owner alerts</li><li>30 days of tuning on real calls</li><li class="bonus">Your scripts and price list loaded in for you</li><li class="bonus">I set up your Vapi or Retell account</li><li class="bonus">Recorded walkthrough for your team</li></ul>
+      <p class="ms"><b>Milestones:</b> $1,500 script, rules and test mode · $2,250 live after your sign-off · $1,250 after 30 days</p>
+    </div>
+    <div class="tier">
+      <h4>Multi-location</h4><p class="for">For several locations, brands or languages.</p>
+      <div class="price"><b>$9,500</b></div>
+      <ul><li>Everything in Full-service</li><li>Routing by location and trade</li><li>English and Spanish</li><li>Weekly owner report</li><li>60 days of tuning and care</li></ul>
+      <p class="ms"><b>Milestones:</b> four payments of $2,375</p>
+    </div>
+  </div>
+</div></section>
+
+<section class="blk-sec" id="start"><div class="wrap">
+  <div class="cta">
+    <div>
+      <h2>Hear your own receptionist before you buy.</h2>
+      <p>Send me your price list, service area and how you handle emergencies. I'll load them into this demo so you can call it, try to break it, and decide with real answers in front of you.</p>
+      <p class="urg">Setup takes 2 to 3 weeks, and text confirmations need A2P registration, so start before your busy season.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px"><a class="btn pri" href="#try">Try it again</a><a class="btn ghost" href="#offer">See pricing</a></div>
+    </div>
+    <div>
+      <p style="font-weight:700;color:var(--text);margin-bottom:10px">What I need from you to start</p>
+      <ul class="need">
+        <li><b>1</b>Your price list and service area</li>
+        <li><b>2</b>Office hours, on-call rota and your emergency rules</li>
+        <li><b>3</b>Access to your calendar or field-service software</li>
+        <li><b>4</b>Your phone provider, or we set up a new number</li>
+      </ul>
+    </div>
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  <p class="scope"><b>Honest scope.</b> Copper Mesa Air &amp; Plumbing is invented for this portfolio demo. Its prices, technicians, calendar, phone numbers and callers are invented, and no real customer data is shown. The understanding rules, emergency triage, calendar booking, guardrails and call records are real code that passes automated checks. No real calls, texts or pages go out. So the demo runs without an API key, Ava uses rules rather than a language model, and her voice is your browser's built-in voice. A delivered build runs on a voice platform (Vapi or Retell) with a natural voice and a language model (Claude) behind the same rules, on the client's own number, calendar and CRM, with access they provide during the build. If you use the microphone, your browser turns your speech into text (Chrome uses Google's speech service for this); this page stores nothing. No client build is shown or claimed.</p>
+  <p>Built by Taiwo, Pathfinder Automation Solutions.</p>
+</div></footer>
+<div class="toast" id="toast" role="status"></div>
+
+<script id="fallback" type="application/json">{"_note":"Invented company for a portfolio demo. Every name, phone number, address, price, technician and calendar entry is made up. Phone numbers use the reserved 555-01xx range.","company":{"name":"Copper Mesa Air & Plumbing","spoken":"Copper Mesa Air and Plumbing","short":"Copper Mesa","agent":"Ava","dispatcher":"Renee","phone":"(602) 555-0142","areaText":"Phoenix, Tempe, Mesa, Chandler, Gilbert and Scottsdale"},"config":{"heatPriorityF":100,"offerCount":2,"offerTexts":true,"transferDuringHours":true,"recordingNotice":true,"maxClarify":2,"leadMinutes":60,"priorityLeadMinutes":30,"onCallCallbackMinutes":15},"weather":{"todayHighF":108},"hours":{"0":null,"1":["07:00","18:00"],"2":["07:00","18:00"],"3":["07:00","18:00"],"4":["07:00","18:00"],"5":["07:00","18:00"],"6":["08:00","14:00"]},"windowStarts":["08:00","10:00","12:00","14:00","16:00"],"windowMinutes":120,"zones":[{"id":"phx","name":"Phoenix","prefixes":["850"],"zips":[],"travel":20},{"id":"scottsdale","name":"Scottsdale","zips":["85250","85251","85253","85254","85255","85257","85258","85259","85260","85262"],"travel":30},{"id":"tempe","name":"Tempe","zips":["85281","85282","85283","85284","85285"],"travel":25},{"id":"mesa","name":"Mesa","zips":["85201","85202","85203","85204","85205","85206","85207","85208","85209","85210","85212","85213","85215"],"travel":30},{"id":"chandler","name":"Chandler","zips":["85224","85225","85226","85248","85249","85286"],"travel":35},{"id":"gilbert","name":"Gilbert","zips":["85233","85234","85295","85296","85297","85298"],"travel":35}],"outsideCities":["Glendale","Peoria","Goodyear","Avondale","Surprise","Buckeye","Queen Creek","Apache Junction","Cave Creek","Maricopa","Casa Grande","Tucson","Flagstaff"],"services":[{"id":"ac_repair","label":"AC repair","trade":"hvac","minutes":90,"price":"diagnostic","heatCheck":true,"ack":"I'm sorry, that's miserable in this heat.","ackMild":"I'm sorry to hear the AC is out.","keywords":["ac","a/c","air conditioner","air conditioning","air con","cooling","not cooling","blowing warm air","blowing hot air","warm air","hot air","condenser","compressor","heat pump","thermostat","ac unit","ac is leaking","ac leaking","condensate","frozen coil","iced up","unit outside"]},{"id":"heat_repair","label":"Heating repair","trade":"hvac","minutes":90,"price":"diagnostic","ack":"Sorry to hear the heat is out.","keywords":["heater","heating","furnace","no heat","heat isn't working","heat is not working","heat won't come on","pilot light","won't light"]},{"id":"tune_up","label":"AC tune-up","trade":"hvac","minutes":60,"price":"tuneUp","ack":"Happy to set up a tune-up.","keywords":["tune up","tune-up","tuneup","maintenance visit","annual service","service my ac","check up","checkup","seasonal service","clean my ac"]},{"id":"estimate","label":"New system estimate","trade":"hvac","minutes":60,"price":"estimate","ack":"Happy to set up a free estimate.","keywords":["new unit","new system","new ac","new ac unit","new air conditioner","new furnace","new heat pump","replace my ac","replace the ac","replace my unit","replacement","install a new","installation","estimate","whole new"]},{"id":"water_heater","label":"Water heater repair","trade":"plumbing","minutes":90,"price":"diagnostic","ack":"Let's get that water heater looked at.","keywords":["water heater","hot water heater","no hot water","hot water","tankless"]},{"id":"drain","label":"Drain clearing","trade":"plumbing","minutes":60,"price":"drain","ack":"Let's get that drain flowing again.","keywords":["drain","drains","clog","clogged","backed up","backing up","slow drain","toilet","garbage disposal","disposal"]},{"id":"leak","label":"Leak repair","trade":"plumbing","minutes":90,"price":"diagnostic","ack":"Let's get that leak looked at.","keywords":["leak","leaks","leaking","dripping","drip","pipe","pipes","faucet","water on the floor","wet spot","slab leak"]},{"id":"plumbing_repair","label":"Plumbing repair","trade":"plumbing","minutes":90,"price":"diagnostic","generic":true,"ack":"I can help with that.","keywords":["plumbing","plumber"]},{"id":"hvac_repair","label":"Heating and cooling repair","trade":"hvac","minutes":90,"price":"diagnostic","generic":true,"ack":"I can help with that.","keywords":["heating and cooling","hvac"]}],"prices":{"diagnostic":{"amount":89,"text":"Our diagnostic visit is $89, and it's waived if you go ahead with the repair."},"afterHours":{"amount":159,"text":"After-hours and weekend emergency visits are $159 for the diagnostic."},"tuneUp":{"amount":129,"text":"An AC tune-up is $129 and takes about an hour."},"drain":{"amount":149,"text":"Drain clearing starts at $149 for one line."},"estimate":{"amount":0,"text":"Estimates for a new system are free, and you get a written quote on the spot."}},"technicians":[{"id":"t1","name":"Marco","trades":["hvac"],"shift":["07:00","18:00"]},{"id":"t2","name":"Dana","trades":["plumbing"],"shift":["07:00","18:00"]},{"id":"t3","name":"Luis","trades":["hvac","plumbing"],"shift":["08:00","18:00"]}],"onCall":{"tech":"t3"},"busy":[{"tech":"t1","day":0,"start":"07:30","end":"10:00","zone":"mesa","label":"AC repair"},{"tech":"t1","day":0,"start":"12:00","end":"14:30","zone":"scottsdale","label":"AC repair"},{"tech":"t2","day":0,"start":"10:00","end":"11:30","zone":"phx","label":"Drain clearing"},{"tech":"t2","day":0,"start":"13:00","end":"14:30","zone":"tempe","label":"Water heater"},{"tech":"t3","day":0,"start":"08:00","end":"13:00","zone":"chandler","label":"System install"},{"tech":"t3","day":0,"start":"15:00","end":"16:30","zone":"phx","label":"Tune-up"},{"tech":"t1","day":1,"start":"08:00","end":"09:30","zone":"phx","label":"Tune-up"},{"tech":"t1","day":1,"start":"12:30","end":"14:30","zone":"tempe","label":"AC repair"},{"tech":"t2","day":1,"start":"09:00","end":"11:00","zone":"mesa","label":"Leak repair"},{"tech":"t2","day":1,"start":"14:00","end":"15:30","zone":"gilbert","label":"Drain clearing"},{"tech":"t3","day":1,"start":"08:00","end":"15:00","zone":"scottsdale","label":"System install"},{"tech":"t1","day":2,"start":"08:30","end":"09:30","zone":"phx","label":"Tune-up"},{"tech":"t1","day":2,"start":"13:00","end":"15:00","zone":"chandler","label":"AC repair"},{"tech":"t2","day":2,"start":"08:00","end":"09:30","zone":"phx","label":"Faucet"},{"tech":"t3","day":2,"start":"08:00","end":"12:00","zone":"gilbert","label":"Water heater install"},{"tech":"t1","day":3,"start":"10:00","end":"12:00","zone":"tempe","label":"AC repair"},{"tech":"t2","day":3,"start":"13:00","end":"15:00","zone":"scottsdale","label":"Repipe"},{"tech":"t3","day":3,"start":"08:00","end":"10:00","zone":"mesa","label":"Tune-up"}],"emergencies":[{"id":"gas","level":"danger","label":"Gas smell","keywords":["smell gas","smells like gas","smelling gas","gas smell","gas leak","leaking gas","rotten egg","rotten eggs"],"script":"Please leave the house right now, and leave the door open behind you. Don't use light switches, the stove, or anything that could make a spark. Once you're outside, call 911 or your gas company's emergency line."},{"id":"co","level":"danger","label":"Carbon monoxide alarm","keywords":["carbon monoxide","co alarm","co detector","co2 alarm"],"script":"Please get everyone out of the house now, including pets, and call 911 from outside. Don't go back in until the fire department says it's safe."},{"id":"fire","level":"danger","label":"Smoke or burning smell","keywords":["smoke coming","smoking","on fire","flames","sparks","sparking","burning smell","smells like burning","electrical smell"],"script":"Please turn the system off at the thermostat now. If you see smoke or flames, get everyone outside and call 911."},{"id":"flood","level":"urgent","label":"Burst pipe or flooding","keywords":["burst pipe","pipe burst","pipe broke","broken pipe","pouring","gushing","spraying","flooding","flooded","water everywhere"],"script":"Let's stop the water first. Turn the small valves under the fixture clockwise until they stop. If water keeps coming, shut off the main valve where the water line enters the house."},{"id":"sewage","level":"urgent","label":"Sewage backup","keywords":["sewage","sewer backup","sewer is backing up","sewer backing up","overflowing toilet","toilet is overflowing","toilet overflowing"],"script":"Please stop using the sinks, showers and toilets for now, and keep everyone away from the water."}],"faq":[{"id":"warranty","keywords":["warranty","guarantee","guaranteed"],"answer":"Repairs come with a one-year parts and labor warranty, and new systems carry the manufacturer's warranty plus our own two-year labor warranty."},{"id":"payment","keywords":["pay","payment","credit card","cards","financing","finance","pay by check","checks"],"answer":"We take cards and checks, and financing is available on new systems."},{"id":"brands","keywords":["brand","brands","make and model","trane","carrier","lennox","goodman","rheem"],"answer":"We service all major brands of air conditioners, heat pumps, furnaces and water heaters."},{"id":"club","keywords":["membership","member","comfort club","maintenance plan","discount","discounts"],"answer":"The Comfort Club is $15 a month. It includes two tune-ups a year, priority scheduling and 10% off repairs."},{"id":"licensed","keywords":["licensed","license","insured","bonded"],"answer":"Yes, Copper Mesa is licensed, bonded and insured."}],"callLog":[{"time":"07:12","caller":"Lena W.","topic":"Drain clog in the kitchen","outcome":"booked","detail":"Dana, today 10 AM to 12 PM"},{"time":"07:48","caller":"(480) 555-0110","topic":"Sales call about a business listing","outcome":"spam","detail":"Ended politely, no alert"},{"time":"08:31","caller":"Tom R.","topic":"AC tune-up","outcome":"booked","detail":"Marco, Thursday 8 to 10 AM"},{"time":"09:56","caller":"Grace P.","topic":"Question about a bill","outcome":"transferred","detail":"To Renee in the office"},{"time":"11:40","caller":"Sam K.","topic":"No hot water","outcome":"booked","detail":"Dana, today 12 to 2 PM"}],"samples":[{"id":"heat","title":"No AC, 108°F outside","blurb":"Heat triage, then a same-day booking","now":"2026-10-27T13:05","callerId":"(602) 555-0187","expect":{"outcome":"booked","urgency":"priority"},"lines":["Hi, my AC stopped working and it's blowing warm air. It's already 90 degrees inside.","Yes, my mom lives with me. She's 82.","Maria Lopez.","4127 East Copper Ridge Lane, Phoenix, 85018.","Yes, that's my cell.","The earlier one, please.","Sure, that's fine.","No, that's everything. Thank you!"]},{"id":"gas","title":"Gas smell at night","blurb":"Safety first, then a live transfer","now":"2026-10-27T20:15","callerId":"(602) 555-0131","expect":{"outcome":"emergency_transfer","urgency":"danger"},"lines":["I think I smell gas near my water heater."]},{"id":"price","title":"Price shopper","blurb":"Answers from the price list, never guesses","now":"2026-10-27T10:20","callerId":"(480) 555-0123","expect":{"outcome":"booked","urgency":"normal"},"lines":["Hi, how much do you charge to come out?","Maybe. And roughly how much is a whole new AC unit?","Okay, yes, let's do the estimate.","James Whitfield.","880 West Juniper Hollow Road, Tempe, 85283.","No, use 480 555 0199.","Tomorrow morning would be better.","Yes, that works.","No texts, please.","No, that's it. Thanks."]},{"id":"pipe","title":"Burst pipe, Saturday 9:40 PM","blurb":"Shut-off steps, then the on-call plumber","now":"2026-10-31T21:40","callerId":"(480) 555-0168","expect":{"outcome":"oncall_dispatch","urgency":"urgent"},"lines":["Water is pouring out of a pipe under my kitchen sink!","It's Priya Shah.","2250 South Lantern Mesa Way, Mesa, 85209.","Yes."]},{"id":"spam","title":"Sales pitch","blurb":"Spotted and ended, no alert","now":"2026-10-27T11:20","callerId":"(480) 555-0110","expect":{"outcome":"spam","urgency":"normal"},"lines":["Hi, this is Kyle with Local Search Pros. I'm calling about your Google business listing."]},{"id":"human","title":"\"Am I talking to a robot?\"","blurb":"Honest answer, then a transfer","now":"2026-10-27T15:30","callerId":"(602) 555-0175","expect":{"outcome":"transferred","urgency":"normal"},"lines":["Wait, am I talking to a robot?","I'd rather talk to a real person."]}]}</script>
+<script src="src/receptionEngine.js"></script>
+<script>
+(function () {
+  'use strict';
+  var E = window.ReceptionEngine;
+  var Q = new URLSearchParams(location.search);
+  var FAST = Q.get('fast') === '1';
+  var hooks = window.__demoHooks || {};
+  var $ = function (s) { return document.querySelector(s); };
+  var $$ = function (s) { return Array.prototype.slice.call(document.querySelectorAll(s)); };
+  var DATA, PROBLEMS = [];
+  var PRESETS = [
+    { id: '2026-10-27T13:05', label: 'Tue 1:05 PM' },
+    { id: '2026-10-27T20:15', label: 'Tue 8:15 PM' },
+    { id: '2026-10-31T21:40', label: 'Sat 9:40 PM' },
+    { id: '2026-11-01T09:30', label: 'Sun 9:30 AM' }
+  ];
+  var FREE_CALLER = '(480) 555-0144';
+  var S = {
+    call: null, ctx: { extraBusy: [] }, records: [], cfg: {}, preset: PRESETS[0].id,
+    voice: Q.get('voice') !== '0' && 'speechSynthesis' in window, playing: null, stop: false,
+    calDay: 0, t0: 0, timer: null, seenGuards: 0, busy: false, gen: 0
+  };
+  var VOICES = { agent: null, caller: null };
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function wait(ms) { return new Promise(function (r) { setTimeout(r, FAST ? Math.min(ms, 25) : ms); }); }
+  // Timing marks for the walkthrough recorder (window.__demoHooks is only set by the recorder).
+  function mark(ev) { ev.t = performance.now(); ev.wall = performance.timeOrigin + ev.t; (window.__demoEvents = window.__demoEvents || []).push(ev); if (hooks.onEvent) { try { hooks.onEvent(ev); } catch (e) { } } }
+  function toast(t) { var el = $('#toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toast.h); toast.h = setTimeout(function () { el.classList.remove('show'); }, 2600); }
+  function err(t) { $('#err').textContent = t || ''; if (t) { clearTimeout(err.h); err.h = setTimeout(function () { $('#err').textContent = ''; }, 4000); } }
+
+  // ------------------------------------------------------------ voice
+  function pickVoices() {
+    if (!('speechSynthesis' in window)) return;
+    var vs = speechSynthesis.getVoices().filter(function (v) { return /^en[-_]/i.test(v.lang); });
+    function pref(list, names) { for (var i = 0; i < names.length; i++) { var n = names[i]; var v = list.filter(function (x) { return x.name.toLowerCase().indexOf(n) >= 0; })[0]; if (v) return v; } return null; }
+    VOICES.agent = pref(vs, ['aria online', 'jenny online', 'ava online', 'emma online', 'google us english', 'samantha', 'ava', 'zoe', 'allison', 'susan', 'karen', 'moira', 'tessa']) || vs.filter(function (v) { return /en-US/i.test(v.lang); })[0] || vs[0] || null;
+    var rest = vs.filter(function (v) { return v !== VOICES.agent; });
+    VOICES.caller = pref(rest, ['guy online', 'davis online', 'andrew online', 'brian online', 'google uk english male', 'daniel', 'alex', 'aaron', 'fred', 'rishi']) || rest[0] || VOICES.agent;
+  }
+  function speak(text, who) {
+    return new Promise(function (res) {
+      if (!S.voice || !('speechSynthesis' in window)) return res(false);
+      try {
+        var u = new SpeechSynthesisUtterance(E.toSpeech(text));
+        var v = VOICES[who]; if (v) { u.voice = v; u.lang = v.lang; }
+        u.rate = who === 'agent' ? 1.04 : 1.0; u.pitch = who === 'agent' ? 1.04 : 0.94;
+        var done = false;
+        var fin = function () { if (!done) { done = true; wave(null); res(true); } };
+        u.onstart = function () { wave(who); };
+        u.onend = fin; u.onerror = fin;
+        speechSynthesis.speak(u);
+        setTimeout(fin, 2500 + text.length * 90);
+      } catch (e) { res(false); }
+    });
+  }
+  function speakOrWait(who, text, gen) {
+    if (hooks.duration) { var d = hooks.duration(who, text); if (d) { wave(who); return wait(d).then(function () { wave(null); }); } }
+    if (S.voice) return speak(text, who);
+    wave(who);
+    return wait(Math.min(7000, 500 + text.split(/\s+/).length * 300)).then(function () { if (gen === S.gen) wave(null); });
+  }
+  function wave(who) {
+    var w = $('#wave'); w.className = 'wave' + (who ? ' ' + who : '');
+    $('#waveLabel').textContent = who === 'agent' ? 'Ava is speaking' : who === 'caller' ? 'Caller is speaking' : who === 'listen' ? 'Listening' : '';
+  }
+
+  // ------------------------------------------------------------ call
+  function presetLabel(id) { var p = PRESETS.filter(function (x) { return x.id === id; })[0]; return p ? p.label : id; }
+  function openNoteFor(iso) {
+    var w = E.parseNow(iso); var open = E.isOpen(DATA, w);
+    return open ? 'Office open' : (DATA.hours[String(w.weekday)] ? 'After hours' : 'Closed today');
+  }
+  function setStatus(kind, text) { var s = $('#status'); s.className = 'status' + (kind ? ' ' + kind : ''); s.textContent = text; }
+  function tick() { var s = Math.floor((performance.now() - S.t0) / 1000); $('#timer').textContent = Math.floor(s / 60) + ':' + ('0' + s % 60).slice(-2); }
+
+  function beginCall(now, callerId) {
+    if ('speechSynthesis' in window) speechSynthesis.cancel();
+    S.gen++;
+    S.call = E.startCall(DATA, { now: now, callerId: callerId, config: S.cfg, id: 'call-' + Date.now() });
+    if (DATA.weather) S.call.highF = DATA.weather.todayHighF;
+    S.seenGuards = 0;
+    $('#transcript').innerHTML = '';
+    $('#summary').classList.remove('show'); $('#summary').innerHTML = '';
+    $('#openNote').textContent = openNoteFor(now);
+    setStatus('live', 'Live');
+    S.t0 = performance.now(); clearInterval(S.timer); S.timer = setInterval(tick, 500); tick();
+    $('#input').disabled = false; $('#sendBtn').disabled = false; $('#micBtn').disabled = !REC;
+    $('#input').placeholder = 'Type what the caller says, then press Enter';
+    bubble('sys', presetLabel(now) + ' · incoming call from ' + (callerId || 'a blocked number'));
+    bubble('agent', S.call.greeting, 'Ava · greeting');
+    mark({ who: 'agent', text: S.call.greeting, kind: 'greeting' });
+    S.calDay = 0;
+    renderBrain(null); renderCal();
+  }
+
+  function bubble(who, text, meta) {
+    var el = document.createElement('div');
+    el.className = 'msg ' + who;
+    el.innerHTML = '<div class="b"></div>' + (meta ? '<div class="meta">' + esc(meta) + '</div>' : '');
+    el.querySelector('.b').textContent = text;
+    var t = $('#transcript'); var em = $('#empty'); if (em) em.remove();
+    t.appendChild(el); t.scrollTop = t.scrollHeight;
+    return el;
+  }
+  function typing(on) {
+    var t = $('#transcript'), ex = t.querySelector('.typing');
+    if (on && !ex) { var d = document.createElement('div'); d.className = 'typing'; d.innerHTML = '<i></i><i></i><i></i>'; t.appendChild(d); t.scrollTop = t.scrollHeight; }
+    if (!on && ex) ex.remove();
+  }
+
+  var PENDING = {
+    reason: 'Listening for the reason for the call', heat: 'Heat triage: who is at home', name: 'Asking for a name',
+    address: 'Asking for the address', zip: 'Asking for the ZIP code', street: 'Asking for the street',
+    phone: 'Confirming the callback number', phone_new: 'Asking for a callback number', window: 'Offering real times',
+    consent: 'Asking before texting', anything_else: 'Wrapping up', book_offer: 'Offering to book a visit',
+    estimate_offer: 'Offering a free estimate', address_retry: 'Outside the area: another address?'
+  };
+
+  function send(text, fromSample) {
+    if (!S.call || S.call.ended) { err('Start a call first.'); return null; }
+    var res = E.respond(S.call, text, DATA, S.ctx);
+    if (!res.ok) { err(res.error); return res; }
+    err('');
+    if ('speechSynthesis' in window && !fromSample) speechSynthesis.cancel();
+    if (!fromSample) { bubble('caller', text, 'Caller'); mark({ who: 'caller', text: text }); }
+    renderBrain(res);
+    if (res.offers.length) S.calDay = res.offers[0].day;
+    if (res.booked) S.calDay = res.booked.day;
+    renderCal();
+    return res;
+  }
+
+  function agentReply(res, gen) {
+    typing(true);
+    return wait(FAST ? 10 : 520).then(function () {
+      typing(false);
+      if (gen !== S.gen) return;
+      var danger = S.call.urgency === 'danger' && res.ended;
+      var meta = 'Ava' + (res.pending ? ' · ' + (PENDING[res.pending] || res.pending).toLowerCase() : res.ended ? ' · call ended' : '');
+      var el = bubble('agent', res.reply, meta);
+      if (danger) el.classList.add('danger');
+      mark({ who: 'agent', text: res.reply });
+      return speakOrWait('agent', res.reply, gen);
+    }).then(function () { if (gen === S.gen && res.ended) finishCall(); });
+  }
+
+  function submit() {
+    var inp = $('#input'); var text = inp.value;
+    if (S.playing) { err('A sample call is playing. Stop it first.'); return; }
+    var res = send(text, false);
+    if (res && res.ok) { inp.value = ''; agentReply(res, S.gen); }
+  }
+
+  function finishCall() {
+    clearInterval(S.timer);
+    setStatus('done', 'Call ended');
+    wave(null);
+    $('#input').disabled = true; $('#sendBtn').disabled = true; $('#micBtn').disabled = true;
+    $('#input').placeholder = 'Call ended. Start a new call or play a sample.';
+    var sum = E.summarize(S.call, DATA);
+    sum.isNew = true;
+    S.records.unshift(sum);
+    renderSummary(sum);
+    renderLog();
+    mark({ who: 'system', text: 'ended', outcome: sum.outcome });
+  }
+
+  // ------------------------------------------------------------ samples
+  function playSample(id) {
+    if (S.playing) return;
+    var s = DATA.samples.filter(function (x) { return x.id === id; })[0];
+    if (!s) return;
+    S.playing = id; S.stop = false; renderSamples();
+    S.ctx.extraBusy = [];
+    beginCall(s.now, s.callerId);
+    var gen = S.gen;
+    var i = 0;
+    function step() {
+      if (S.stop || gen !== S.gen || !S.call || S.call.ended || i >= s.lines.length) return Promise.resolve();
+      var line = s.lines[i++];
+      return callerSay(line, gen).then(function () {
+        if (S.stop || gen !== S.gen) return;
+        var res = send(line, true);
+        if (!res || !res.ok) return;
+        return agentReply(res, gen).then(step);
+      });
+    }
+    speakOrWait('agent', S.call.greeting, gen).then(step).then(function () {
+      if (gen === S.gen) { S.playing = null; renderSamples(); }
+    });
+  }
+  function callerSay(line, gen) {
+    var el = bubble('caller', '', 'Caller');
+    mark({ who: 'caller', text: line });
+    var words = line.split(' ');
+    var dur = (hooks.duration && hooks.duration('caller', line)) || (S.voice ? 0 : Math.min(5200, 450 + words.length * 280));
+    var spoken = S.voice && !hooks.duration ? speak(line, 'caller') : null;
+    if (!spoken) wave('caller');
+    var per = Math.max(30, (dur || words.length * 260) / words.length);
+    var k = 0;
+    return new Promise(function (res) {
+      (function rev() {
+        if (gen !== S.gen) return res();
+        k++;
+        el.querySelector('.b').textContent = words.slice(0, k).join(' ');
+        var t = $('#transcript'); t.scrollTop = t.scrollHeight;
+        if (k < words.length) setTimeout(rev, FAST ? 2 : per);
+        else res();
+      })();
+    }).then(function () { return spoken || wait(FAST ? 5 : 200); }).then(function () { if (!spoken) wave(null); return wait(FAST ? 5 : 260); });
+  }
+
+  // ------------------------------------------------------------ brain panel
+  function fieldDefs(res) {
+    var c = S.call, sl = c ? c.slots : {}, svc = sl.service ? DATA.services.filter(function (x) { return x.id === sl.service; })[0] : null;
+    var zone = sl.zone ? DATA.zones.filter(function (z) { return z.id === sl.zone; })[0] : null;
+    var urg = c ? c.urgency : 'normal';
+    var b = c && c.booked;
+    return [
+      { k: 'service', l: 'Job', v: svc ? svc.label : null },
+      { k: 'urgency', l: 'Urgency', v: c && (urg !== 'normal' || sl.service) ? { normal: 'Normal', priority: 'Heat priority', urgent: 'Urgent', danger: 'Danger' }[urg] : null, cls: urg === 'danger' ? 'bad' : urg !== 'normal' ? 'warn' : '' },
+      { k: 'name', l: 'Name', v: sl.name },
+      { k: 'street', l: 'Address', v: sl.street },
+      { k: 'zip', l: 'ZIP · area', v: sl.zip ? sl.zip + ' · ' + (zone ? zone.name : 'outside area') : null, cls: sl.zip && !zone ? 'bad' : '' },
+      { k: 'phone', l: 'Phone', v: sl.phone },
+      { k: 'appt', l: 'Appointment', v: b ? (b.dayLabel.charAt(0).toUpperCase() + b.dayLabel.slice(1)) + ' ' + b.spanLabel + ' · ' + b.techName : (c && c.offers.length ? c.offers.length + ' time' + (c.offers.length > 1 ? 's' : '') + ' offered' : null), cls: b ? 'good' : '' },
+      { k: 'consent', l: 'Text consent', v: sl.consent === true ? 'Yes' : sl.consent === false ? 'No' : null }
+    ];
+  }
+  var lastVals = {};
+  function renderBrain(res) {
+    var c = S.call;
+    $('#turnNo').textContent = c ? 'turn ' + Math.floor(c.turns.length / 2) : 'waiting for a call';
+    var u = res && res.understood;
+    var chip = $('#intent');
+    chip.textContent = u ? u.label : c ? 'Greeting sent' : 'Nothing yet';
+    chip.className = 'chip' + (u && u.intent === 'emergency' ? ' red' : u ? ' hot' : '');
+    var conf = u ? Math.round(u.confidence * 100) : 0;
+    $('#conf').style.width = conf + '%'; $('#confNum').textContent = conf + '%';
+    $('#nextStep').innerHTML = 'Next: <b>' + esc(!c ? 'start a call' : c.ended ? 'call ended · ' + (E.OUTCOMES[c.outcome] || c.outcome) : (PENDING[c.pending] || 'listening')) + '</b>';
+    var defs = fieldDefs(res);
+    $('#fields').innerHTML = defs.map(function (f) {
+      var changed = f.v && lastVals[f.k] !== f.v;
+      return '<div class="f' + (f.v ? ' set' : '') + (changed ? ' flash' : '') + (f.cls ? ' ' + f.cls : '') + '" data-f="' + f.k + '"><div class="k"><i>✓</i>' + esc(f.l) + '</div><div class="v' + (f.v ? '' : ' ph') + '">' + esc(f.v || '·') + '</div></div>';
+    }).join('');
+    defs.forEach(function (f) { lastVals[f.k] = f.v; });
+    setTimeout(function () { $$('#fields .flash').forEach(function (x) { x.classList.remove('flash'); }); }, 1400);
+    var sl = c ? c.slots : {};
+    $('#problem').innerHTML = sl.problem ? '<b>Caller said:</b> "' + esc(sl.problem) + '"' + (sl.indoorF ? ' · <b>' + sl.indoorF + '°F inside</b>' : '') + (sl.vulnerable ? ' · <b>vulnerable person at home</b>' : '') : 'The caller\'s own words about the problem show here.';
+    var acts = (res && res.actions || []).filter(function (a) { return a.type !== 'end'; });
+    $('#acts').innerHTML = acts.map(function (a) {
+      if (a.type === 'book') return '<span class="act">✓ Booked ' + esc(a.tech) + ' · ' + esc(a.window) + '</span>';
+      if (a.type === 'transfer') return '<span class="act ' + (S.call.urgency === 'danger' ? 'r' : 'x') + '">↗ Transferred to ' + esc(a.name) + '</span>';
+      if (a.type === 'page') return '<span class="act r">⚑ Paged ' + esc(a.name) + ' (on call)</span>';
+      if (a.type === 'callback') return '<span class="act x">↺ Callback: ' + esc(a.by) + ', ' + esc(a.when) + '</span>';
+      return '';
+    }).join('');
+    var g = c ? c.guardrails : [];
+    $('#gCount').textContent = g.length;
+    $('#guards').innerHTML = g.length ? g.slice().reverse().map(function (x, i) { return '<li' + (i < g.length - S.seenGuards ? ' class="new"' : '') + '>' + esc(x) + '</li>'; }).join('') : '<li class="none" style="padding:0">None yet.</li>';
+    S.seenGuards = g.length;
+  }
+
+  // ------------------------------------------------------------ calendar
+  var DAY0 = 420, DAYSPAN = 660;
+  function pct(min) { return Math.max(0, Math.min(100, (min - DAY0) / DAYSPAN * 100)); }
+  function hm(s) { var p = s.split(':'); return +p[0] * 60 + +p[1]; }
+  function renderCal() {
+    var iso = S.call ? S.call.when.iso : S.preset;
+    var w = E.parseNow(iso);
+    var DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    $('#calTabs').innerHTML = [0, 1, 2, 3].map(function (d) {
+      var wd = (w.weekday + d) % 7;
+      return '<button type="button" data-day="' + d + '" class="' + (d === S.calDay ? 'on' : '') + '">' + (d === 0 ? 'Today' : d === 1 ? 'Tomorrow' : DAYS[wd]) + ' <span style="opacity:.6">' + DAYS[wd] + '</span></button>';
+    }).join('');
+    var wd = (w.weekday + S.calDay) % 7, hrs = DATA.hours[String(wd)];
+    if (!hrs) { $('#cal').innerHTML = '<div class="closed">Closed on ' + ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][wd] + 's. Emergencies go to the on-call technician.</div>'; return; }
+    var ticks = '';
+    for (var h = 7; h <= 18; h++) ticks += '<span style="left:' + pct(h * 60) + '%">' + (h % 12 || 12) + (h < 12 ? 'a' : 'p') + '</span>';
+    var busy = E.busyOn(DATA, S.call || { when: w }, S.calDay, S.ctx);
+    var offers = S.call && !S.call.ended ? S.call.offers.filter(function (o) { return o.day === S.calDay; }) : [];
+    var rows = DATA.technicians.map(function (t) {
+      var inner = '';
+      busy.filter(function (b) { return b.tech === t.id; }).forEach(function (b) {
+        var z = DATA.zones.filter(function (x) { return x.id === b.zone; })[0], tr = z ? z.travel : 30;
+        var s = hm(b.start), e = hm(b.end);
+        inner += '<span class="drive" style="left:' + pct(s - tr) + '%;width:' + (pct(s) - pct(s - tr)) + '%" title="Drive time"></span>';
+        inner += '<span class="blk' + (b.booked ? ' booked' : '') + '" style="left:' + pct(s) + '%;width:' + (pct(e) - pct(s)) + '%">' + esc(b.booked ? 'Booked · ' + b.label : b.label) + '<small>' + E.clock(s) + ' · ' + esc(z ? z.name : '') + '</small></span>';
+      });
+      offers.filter(function (o) { return o.tech === t.id; }).forEach(function (o) {
+        inner += '<span class="offer" style="left:' + pct(o.start) + '%;width:' + (pct(o.end) - pct(o.start)) + '%">Offered ' + esc(o.spanLabel) + '</span>';
+      });
+      if (S.calDay === 0 && S.call) inner += '<span class="nowline" style="left:' + pct(S.call.when.minutes) + '%" title="Call time"></span>';
+      return '<div class="trow"><div class="tname">' + esc(t.name) + '<small>' + t.trades.map(function (x) { return x === 'hvac' ? 'Heating & cooling' : 'Plumbing'; }).join(' + ') + '</small></div><div class="track">' + inner + '</div></div>';
+    }).join('');
+    $('#cal').innerHTML = '<div class="calscroll"><div class="calin"><div class="axis"><span></span><div class="ticks">' + ticks + '</div></div>' + rows + '</div></div>' +
+      '<div class="legend"><span><i style="background:var(--s4)"></i>Existing job</span><span><i style="background:repeating-linear-gradient(135deg,rgba(255,255,255,.3) 0 3px,transparent 3px 6px)"></i>Drive time kept free</span><span><i style="border:2px dashed var(--acc)"></i>Offered window</span><span><i style="background:var(--acc)"></i>Booked on a call</span><span><i style="background:var(--bad)"></i>Call time</span></div>';
+  }
+
+  // ------------------------------------------------------------ after the call
+  function renderSummary(s) {
+    var el = $('#summary');
+    var dur = Math.round((performance.now() - S.t0) / 1000);
+    el.innerHTML =
+      '<div><span class="badge ' + s.outcome + '">' + esc(s.outcomeLabel) + '</span>' + (s.urgency !== 'normal' ? ' <span class="badge ' + s.urgency + '">' + esc(s.urgencyLabel) + '</span>' : '') + '</div>' +
+      '<p class="sum-h" id="sumHead">' + esc(s.headline) + '</p>' +
+      '<p class="sum-sub">' + esc(s.weekday + ' ' + s.time) + ' · ' + Math.floor(dur / 60) + ':' + ('0' + dur % 60).slice(-2) + ' on the call · ' + s.turns + ' turns · saved to the call log</p>' +
+      '<div class="mini"><div class="k"><span>Text to the customer</span></div><div class="v ' + (s.sms ? 'sms' : 'none') + '" id="smsOut">' + esc(s.sms || (s.consent === false ? 'No text: the caller said no.' : 'No text on this call.')) + '</div></div>' +
+      '<div class="mini"><div class="k"><span>Alert to the owner</span></div><div class="v ' + (s.ownerAlert ? 'alert' : 'none') + '" id="alertOut">' + esc(s.ownerAlert || 'No alert needed.') + '</div></div>' +
+      '<div class="mini"><div class="k"><span>CRM record</span></div><div class="v" style="font-size:12.5px;color:var(--muted)">Tags: ' + esc(s.crm.tags.join(', ')) + '</div><details class="crm"><summary>View the record</summary><pre id="crmOut">' + esc(JSON.stringify(s.crm, null, 2)) + '</pre></details></div>' +
+      '<div style="display:flex;gap:8px"><button class="btn pri sm" type="button" data-start style="flex:1">New call</button><button class="btn ghost sm" type="button" id="showT" style="flex:1">Show transcript</button></div>';
+    requestAnimationFrame(function () { el.classList.add('show'); });
+    $('#showT').onclick = function () { el.classList.remove('show'); };
+    el.querySelector('[data-start]').onclick = startFree;
+  }
+
+  function renderLog() {
+    var seeded = DATA.callLog.map(function (r) { return { time: E.clock(hm(r.time)), who: r.caller, what: r.topic + ' · ' + r.detail, outcome: r.outcome, label: E.OUTCOMES[r.outcome], afterHours: false }; });
+    var mine = S.records.map(function (s) {
+      return { time: s.weekday.slice(0, 3) + ' ' + s.time, who: s.name || s.callerId || 'Blocked number', what: s.headline, outcome: s.outcome, label: s.outcomeLabel, afterHours: s.afterHours, isNew: true };
+    });
+    var all = mine.concat(seeded);
+    var m = E.callLog(all);
+    $('#metrics').innerHTML = [
+      [m.calls, 'calls answered'], [m.booked, 'booked'], [m.emergencies, 'emergencies routed'], [m.afterHours, 'after hours'], [m.spam, 'sales calls ended']
+    ].map(function (x) { return '<div class="metric"><b>' + x[0] + '</b><span>' + x[1] + '</span></div>'; }).join('');
+    $('#logBody').innerHTML = all.map(function (r) {
+      return '<tr' + (r.isNew ? ' class="new"' : '') + '><td class="mono">' + esc(r.time) + '</td><td>' + esc(r.who) + (r.isNew ? ' <span class="badge" style="margin-left:6px">from this page</span>' : '') + '</td><td class="muted">' + esc(r.what) + '</td><td><span class="badge ' + r.outcome + '">' + esc(r.label) + '</span></td></tr>';
+    }).join('');
+  }
+
+  // ------------------------------------------------------------ controls
+  function renderSamples() {
+    $('#samples').innerHTML = DATA.samples.map(function (s) {
+      return '<button type="button" class="sbtn' + (S.playing === s.id ? ' on' : '') + '" data-sample="' + s.id + '"' + (S.playing && S.playing !== s.id ? ' disabled' : '') + '><b>' + esc(s.title) + '</b><span>' + esc(s.blurb) + '</span></button>';
+    }).join('');
+    $('#stopRow').classList.toggle('show', !!S.playing);
+  }
+  function startFree() {
+    if (S.playing) { S.stop = true; S.playing = null; renderSamples(); }
+    beginCall(S.preset, FREE_CALLER);
+    var gen = S.gen;
+    speakOrWait('agent', S.call.greeting, gen);
+    setTimeout(function () { $('#input').focus(); }, 50);
+    if (window.innerWidth < 980) $('#phone').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  function applyRules() {
+    S.cfg = {
+      heatPriorityF: +$('#rHeat').value, offerCount: +$('#rOffers').value,
+      offerTexts: $('#rTexts').checked, transferDuringHours: $('#rXfer').checked, recordingNotice: $('#rRec').checked
+    };
+    DATA.weather.todayHighF = +$('#rHigh').value;
+    $('#oHigh').textContent = $('#rHigh').value + '°F'; $('#oHeat').textContent = $('#rHeat').value + '°F'; $('#oOffers').textContent = $('#rOffers').value;
+    if (S.call && !S.call.ended) { for (var k in S.cfg) S.call.cfg[k] = S.cfg[k]; S.call.highF = DATA.weather.todayHighF; }
+    $('#rNote').textContent = 'Saved. ' + (S.call && !S.call.ended ? 'The call in progress uses these from the next reply.' : 'The next call uses these.');
+  }
+
+  // microphone (Chrome, Edge, Safari); typing works everywhere
+  var REC = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+  var rec = null, recOn = false;
+  function toggleMic() {
+    if (!REC) { err('Voice input works in Chrome, Edge and Safari. Typing works everywhere.'); return; }
+    if (recOn) { rec && rec.stop(); return; }
+    rec = new REC(); rec.lang = 'en-US'; rec.interimResults = true; rec.maxAlternatives = 1;
+    var finalText = '';
+    rec.onstart = function () { recOn = true; $('#micBtn').classList.add('rec'); wave('listen'); };
+    rec.onresult = function (e) {
+      var t = ''; for (var i = e.resultIndex; i < e.results.length; i++) { t += e.results[i][0].transcript; if (e.results[i].isFinal) finalText += e.results[i][0].transcript; }
+      $('#input').value = finalText || t;
+    };
+    rec.onerror = function (e) { err(e.error === 'not-allowed' ? 'Microphone permission was declined. Typing still works.' : 'Could not hear that. Try again or type.'); };
+    rec.onend = function () { recOn = false; $('#micBtn').classList.remove('rec'); wave(null); if ($('#input').value.trim()) submit(); };
+    rec.start();
+  }
+
+  function init() {
+    $('#wave').innerHTML = new Array(28).join('<i></i>') + '<i></i>';
+    $('#callTime').innerHTML = PRESETS.map(function (p) { return '<option value="' + p.id + '">' + p.label + '</option>'; }).join('');
+    $('#callTime').onchange = function () { S.preset = this.value; $('#openNote').textContent = openNoteFor(S.preset); if (!S.call || S.call.ended) { S.calDay = 0; renderCal(); } toast('The next call starts at ' + presetLabel(S.preset) + '.'); };
+    $('#openNote').textContent = openNoteFor(S.preset);
+    $$('[data-start]').forEach(function (b) { b.onclick = startFree; });
+    $('#sendBtn').onclick = submit;
+    $('#input').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); submit(); } });
+    $('#micBtn').onclick = toggleMic;
+    if (!REC) $('#micBtn').title = 'Voice input works in Chrome, Edge and Safari';
+    $('#voiceBtn').onclick = function () {
+      S.voice = !S.voice && 'speechSynthesis' in window;
+      if (!S.voice && 'speechSynthesis' in window) speechSynthesis.cancel();
+      this.textContent = S.voice ? 'Voice on' : 'Voice off'; this.setAttribute('aria-pressed', S.voice);
+    };
+    if (!S.voice) { $('#voiceBtn').textContent = 'Voice off'; $('#voiceBtn').setAttribute('aria-pressed', 'false'); }
+    $('#samples').addEventListener('click', function (e) { var b = e.target.closest('[data-sample]'); if (b && !b.disabled) playSample(b.getAttribute('data-sample')); });
+    $('#stopBtn').onclick = function () { S.stop = true; S.gen++; S.playing = null; if ('speechSynthesis' in window) speechSynthesis.cancel(); wave(null); typing(false); renderSamples(); toast('Sample stopped. You can carry on typing as the caller.'); };
+    $('#calTabs').addEventListener('click', function (e) { var b = e.target.closest('[data-day]'); if (b) { S.calDay = +b.getAttribute('data-day'); renderCal(); } });
+    ['rHigh', 'rHeat', 'rOffers', 'rTexts', 'rXfer', 'rRec'].forEach(function (id) { $('#' + id).addEventListener('input', applyRules); $('#' + id).addEventListener('change', applyRules); });
+    $('#dataCheck').textContent = 'Data check: ' + PROBLEMS.length + ' rows skipped';
+    if ('speechSynthesis' in window) { pickVoices(); speechSynthesis.onvoiceschanged = pickVoices; }
+    renderSamples(); renderBrain(null); renderCal(); renderLog();
+    window.__demo = { playSample: playSample, startFree: startFree, state: S };
+  }
+
+  function load() {
+    fetch('data/company.json', { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error('no data'); return r.json(); })
+      .catch(function () { return JSON.parse(document.getElementById('fallback').textContent); })
+      .then(function (raw) { var p = E.prepare(raw); DATA = p.data; PROBLEMS = p.problems; init(); });
+  }
+  load();
+})();
+</script>
+</body>
+</html>

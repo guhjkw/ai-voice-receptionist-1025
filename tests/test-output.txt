@@ -1,0 +1,89 @@
+1. Data check and time helpers
+PASS: sample data loads with no problems
+PASS: bad rows are skipped and reported, not crashed on
+PASS: clock formats 14:30 as 2:30 PM and noon as 12 PM
+PASS: span merges AM/PM: "2 to 4 PM", "10 AM to 12 PM"
+PASS: hours are read from the data
+PASS: a bad call time is refused with a reason
+2. Understanding the caller
+PASS: phone numbers in any format
+PASS: a ZIP code is not read as a phone number
+PASS: street address with direction and suffix
+PASS: numbered streets keep their number: "1500 N 32nd St"
+PASS: "2 kids in my way" is not an address
+PASS: ZIP is the 5-digit number after the street, not the house number
+PASS: names: "my name is maria lopez" -> Maria Lopez
+PASS: names: "I'm calling about my AC" is not a name
+PASS: names: a bare reply counts only when the name was asked for
+PASS: names: "this is urgent" is not a name
+PASS: yes/no: "No texts, please" is a no, "no problem" is a yes, "not sure" is unsure
+3. Which job it is
+PASS: "water heater" beats "heater"
+PASS: "my AC is leaking water" goes to heating and cooling, not plumbing
+PASS: "a whole new AC unit" is a new-system estimate
+PASS: "the pipe under my sink is leaking" is a leak
+PASS: "I need a plumber" is a plumbing job with details to come
+PASS: "the heat is unbearable" (weather) is not a heating repair
+4. Emergencies
+PASS: gas smell is danger
+PASS: "I don't smell gas" is NOT an emergency
+PASS: "there's no gas smell" is NOT an emergency
+PASS: carbon monoxide alarm is danger
+PASS: burst pipe is urgent, not danger
+PASS: danger outranks urgent when both are said
+5. Calendar: real times only
+PASS: 1:05 PM AC call in Phoenix: first windows are today 2-4 and 4-6 PM
+PASS: Marco arrives 3 PM, not 2:30: his 2:30 PM job ends in Scottsdale and drive time is kept free
+PASS: the noon window is skipped: Marco is busy and Luis cannot fit before his 3 PM job
+PASS: priority calls use the shorter lead time (30 min) but never a fake slot
+PASS: a job booked on an earlier call blocks that time (no double-booking): the rest of today cannot fit a 90-minute job plus drive time, so the next offers are tomorrow
+PASS: Saturday 9:40 PM: nothing tonight, nothing Sunday (closed), first times Monday
+PASS: Saturday hours end at 2 PM, so no Saturday window runs past it
+PASS: Saturday calendar only holds jobs inside Saturday hours (8 AM to 2 PM)
+PASS: plumbing jobs only go to technicians with the plumbing trade
+6. The six sample calls (the same scripts the page plays)
+PASS: sample "heat" ends as booked / priority
+PASS: sample "gas" ends as emergency_transfer / danger
+PASS: sample "price" ends as booked / normal
+PASS: sample "pipe" ends as oncall_dispatch / urgent
+PASS: sample "spam" ends as spam / normal
+PASS: sample "human" ends as transferred / normal
+PASS: heat call: asks about vulnerable people because it is 108°F
+PASS: heat call: books Marco today 2 to 4 PM and texts only after a yes
+PASS: heat call: owner alert carries the address, indoor temperature and booking
+PASS: gas call: safety steps come before anything else, then a live transfer
+PASS: price call: the $89 answer comes from the price list
+PASS: price call: no guessed price for a new system
+PASS: price call: "tomorrow morning" finds the one real morning opening
+PASS: price call: "No texts, please" means no SMS is prepared
+PASS: burst pipe after hours: shut-off steps, then the on-call page with name, address and number
+PASS: sales call: ended politely with no owner alert
+PASS: "am I talking to a robot?" gets an honest yes
+7. Interruptions and guardrails
+PASS: a question in the middle is answered, then the open question is asked again
+PASS: a caller named "Price" is a name, not a price question
+PASS: outside the service area: says so and books nothing
+PASS: ...and ends as "outside service area" when there is no other address
+PASS: three misunderstood replies hand the call to a person during hours
+PASS: a person after hours: callback from the office at opening time instead of a dead end
+PASS: an empty reply is refused with a reason and not counted
+PASS: a very long reply is trimmed and noted
+PASS: a call that has ended refuses more input
+PASS: STOP at the consent question records the opt-out
+PASS: "neither" offers the next real times instead of repeating
+PASS: "the 4 o'clock one" picks the 4 to 6 PM window
+PASS: "is this a robot?" mid-call: honest answer, then back to the question
+8. Tunable rules (the paid build is set up the way you work)
+PASS: raise the heat threshold to 110°F: no heat triage question at 108°F
+PASS: turn texts off: no consent question and no SMS
+PASS: offer three times instead of two
+PASS: live transfer off: a callback within the hour instead
+PASS: recording notice can be switched off
+9. After the call
+PASS: call log counts outcomes
+PASS: booked rate leaves spam out (2 of 5 real calls = 40%)
+PASS: CRM record has the contact, job, consent and tags
+PASS: speech version reads phone numbers and ZIP codes digit by digit
+PASS: every reply in the samples is free of em dashes
+
+78 passed, 0 failed
